@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 visualize=0
 target_rel=
@@ -27,7 +28,9 @@ if [[ -e "$src_tb" ]]; then
 fi
 
 mkdir -p "$(dirname "$target")"
-iverilog -t vvp -o "$target" "${srcs[@]}"
+# run verilator in --lint-only mode to get better error messages
+verilator --lint-only --timing "${srcs[@]}"
+iverilog -g2005-sv -Wall -t vvp -o "$target" "${srcs[@]}"
 cd "$target_dir"
 vvp "$target"
 
