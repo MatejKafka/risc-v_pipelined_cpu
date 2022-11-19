@@ -16,21 +16,16 @@ fi
 build_dir="$(realpath $(dirname $BASH_SOURCE)/build)"
 src_dir="$(realpath $(dirname $BASH_SOURCE)/src)"
 
+tb_enabler="TEST_$(basename "$target_rel")"
 target="$build_dir/$target_rel.vvp"
 target_output="$build_dir/$target_rel.vcd"
 target_dir="$(dirname "$target")"
 src="$src_dir/$target_rel.sv"
-src_tb="$src_dir/${target_rel}_tb.sv"
-
-srcs=("$src")
-if [[ -e "$src_tb" ]]; then
-    srcs+=("$src_tb")
-fi
 
 mkdir -p "$(dirname "$target")"
 # run verilator in --lint-only mode to get better error messages
-verilator --lint-only --timing "${srcs[@]}"
-iverilog -g2005-sv -Wall -t vvp -o "$target" "${srcs[@]}"
+#verilator --lint-only --timing -D"$tb_enabler" -I"$src_dir" "$src"
+iverilog -g2012 -Wall -t vvp -D"$tb_enabler" -I"$src_dir" -o "$target" "$src"
 cd "$target_dir"
 vvp "$target"
 
