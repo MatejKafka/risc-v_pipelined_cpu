@@ -2,16 +2,17 @@
 set -e
 
 visualize=0
+debug=
 target_rel=
-if [[ "$1" == "-v" ]]; then
-    visualize=1
-    target_rel=$2
-elif [[ "$2" == "-v" ]]; then
-    visualize=1
-    target_rel=$1
-else
-    target_rel=$1
-fi
+for arg in "$@"; do
+    if [[ "$arg" == "-v" ]]; then
+        visualize=1
+    elif [[ "$arg" == "-d" ]]; then
+        debug="-DDEBUG"
+    else
+        target_rel="$arg"
+    fi
+done
 
 build_dir="$(realpath $(dirname $BASH_SOURCE)/build)"
 src_dir="$(realpath $(dirname $BASH_SOURCE)/src)"
@@ -24,8 +25,8 @@ src="$src_dir/$target_rel.sv"
 
 mkdir -p "$(dirname "$target")"
 # run verilator in --lint-only mode to get better error messages
-#verilator --lint-only --timing -D"$tb_enabler" -I"$src_dir" "$src"
-iverilog -g2012 -Wall -t vvp -D"$tb_enabler" -I"$src_dir" -o "$target" "$src"
+verilator --lint-only --timing -D"$tb_enabler" "$debug" -I"$src_dir" "$src"
+iverilog -g2012 -Wall -t vvp -D"$tb_enabler" "$debug" -I"$src_dir" -o "$target" "$src"
 cd "$target_dir"
 vvp "$target"
 

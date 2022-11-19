@@ -13,8 +13,22 @@ typedef enum logic [2:0] {
     SHR = 5
 } AluOp;
 
+function string AluOp_symbol(AluOp op);
+    case (op)
+        ADD: AluOp_symbol = "+";
+        SUB: AluOp_symbol = "-";
+        AND: AluOp_symbol = "&";
+        OR:  AluOp_symbol = "|";
+        XOR: AluOp_symbol = "^";
+        SLT: AluOp_symbol = "<";
+        SHL: AluOp_symbol = "<<";
+        SHR: AluOp_symbol = ">>";
+    endcase
+endfunction
+
 module alu(input AluOp operation, input Reg a, input Reg b, output Reg out);
-    always @ (*) case (operation)
+    always @ (*) begin
+        case (operation)
         ADD: out = a + b;
         SUB: out = a - b;
         AND: out = a & b;
@@ -24,6 +38,8 @@ module alu(input AluOp operation, input Reg a, input Reg b, output Reg out);
         SHL: out = a << b;
         SHR: out = a >> b;
     endcase
+    `DBG($display("ALU: %0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b));
+    end
 endmodule
 
 `ifdef TEST_alu
@@ -43,8 +59,8 @@ module alu_tb;
         b = 7;
 
         op = ADD; do begin
-            $strobe("a=%0d, b=%0d, op=%0d, out=%0d", a, b, op, out);
-            #1 op++;
+            #1 $display("%0d %0s %0d = %0d", a, AluOp_symbol(op), b, out);
+            op++;
         end while (op != ADD);
     end
 endmodule

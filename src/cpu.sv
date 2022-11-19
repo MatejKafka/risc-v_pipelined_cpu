@@ -30,7 +30,6 @@ module cpu_tb;
     initial begin
         $dumpfile("cpu.vcd");
         $dumpvars(0, cpu_tb);
-        $monitor("out=%d dst=%d", out, dst);
     end
     initial begin
         run(ADD, 1, 0, 10);
@@ -44,13 +43,15 @@ module cpu_tb;
     end
 
     task run(AluOp op_, RegAddress dst_, src_, Reg imm_);
-        op = op_;
-        dst = dst_;
+        $display("r%0d = r%0d %s %0d", dst_, src_, AluOp_symbol(op_), imm_);
         src1 = src_;
-        val2 = imm_;
         clk = 1;
-        #1 clk = 0;
-        #1;
+        op = op_;
+        val2 = imm_;
+        #0.5;
+        clk = 0;
+        #0.5;
+        dst = dst_;
     endtask
 endmodule
 `endif

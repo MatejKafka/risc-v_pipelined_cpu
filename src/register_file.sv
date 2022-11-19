@@ -18,24 +18,19 @@ module register_file (
         if (addr != 0) registers[addr] = value;
     endfunction
 
-    // we have 2 options here:
-    // 1) do register writes on negedge, at the "half" of a cycle
-    // 2) do the writes on posedge, together with reads, but now we have to be careful
-    //    with how we set the operand registers; effectively, we must set the destination
-    //    register 1 cycle after the corresponding instruction is executed; however, imo this
-    //    is cleaner than having half-cycles
     always @ (posedge clk) begin
         // write port
         if (write_enable) write_reg(addr_write, in);
         // read ports
         out1 = read_reg(addr1);
         out2 = read_reg(addr2);
-        $display("read %d: %d", addr1, out1);
     end
 
     task dump;
-        static RegAddress i = 0; do begin
-            if (^read_reg(i) !== 1'bx) $display("r%0d: %0d", i, read_reg(i));
+        RegAddress i;
+        $display("REGS:");
+        i = 0; do begin
+            if (^read_reg(i) !== 1'bx) $display("  r%0d: %0d", i, read_reg(i));
             i++;
         end while (i != 0);
     endtask
@@ -44,7 +39,7 @@ endmodule
 
 `ifdef TEST_register_file
 module register_file_tb;
-    logic clk, write_enable;
+    logic clk = 0, write_enable = 1;
     RegAddress addr_write, addr1, addr2;
     Reg in;
     wire Reg out1, out2;
@@ -55,18 +50,15 @@ module register_file_tb;
         $dumpfile("register_file.vcd");
         $dumpvars(0, register_file_tb);
     end
-
-    RegAddress i;
     initial begin
+        RegAddress i;
         // initialize all registers with (i*10)+1, then dump the contents
-        write_enable = 1;
-        clk = 0;
-        i = 0;
-        do begin
+        i = 0; do begin
             addr_write = i;
             in = i * 10 + 1;
             clk = 1;
-            #1 clk = 0;
+            #0.5 clk = 0;
+            #0.5;
             i++;
         end while (i != 0);
 
