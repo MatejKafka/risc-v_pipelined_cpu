@@ -10,6 +10,10 @@ module register_file (
 
     Word registers[1:(1<<$bits(RegAddress))-1]; // start from 1, register 0 is hardwired to 0
 
+    `TRACE(addr1 or out1, 39, ("🧾0x%00h => %0d", addr1, out1))
+    `TRACE(addr2 or out2, 39, ("🧾0x%00h => %0d", addr2, out2))
+    `TRACE(registers[addr_write], 39, ("🧾0x%00h <= %0d", addr_write, in))
+
     // read ports
     assign out1 = addr1 == 0 ? 0 : registers[addr1];
     assign out2 = addr2 == 0 ? 0 : registers[addr2];

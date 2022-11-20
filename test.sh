@@ -25,7 +25,7 @@ src="$src_dir/$target_rel.sv"
 
 mkdir -p "$(dirname "$target")"
 # run slang in --lint-only mode to get better error messages
-slang.exe --lint-only -D"$tb_enabler" "${debug[@]}" -I"$(wslpath -w "$src_dir")" "$(wslpath -w "$src")" --quiet
+slang.exe --lint-only -Wextra -D"$tb_enabler" "${debug[@]}" -I"$(wslpath -w "$src_dir")" "$(wslpath -w "$src")" --quiet
 iverilog -g2012 -Wall -t vvp -D"$tb_enabler" "${debug[@]}" -I"$src_dir" -o "$target" "$src"
 cd "$target_dir"
 vvp "$target"

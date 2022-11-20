@@ -18,9 +18,22 @@ typedef logic [15:0] RomAddress;
 
 `ifdef DEBUG
 `define DBG(expr) if (1) expr
+`define TRACE(what, color_n, display_expr) \
+    always @ (what) begin \
+        ansi(color_n); \
+        $display display_expr; \
+        ansi_reset(); \
+    end
 `else
 `define DBG(expr) if (0) expr
+`define TRACE(what, color_n, display_expr)
 `endif
 
+task ansi(integer color_n);
+    $write("%c[1;%0dm", 27, color_n);
+endtask
+task ansi_reset;
+    $write("%c[0m", 27);
+endtask
 
 `endif

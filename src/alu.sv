@@ -27,7 +27,8 @@ function string AluOp_symbol(AluOp op);
 endfunction
 
 module alu(input AluOp operation, input Word a, input Word b, output Word out);
-    always @ (out) `DBG($display("ALU: %0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b));
+    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b))
+
     always @ (*) case (operation)
         // using <= instead of = cleans up the debug prints above, and otherwise functions the same
         ADD: out <= a + b;
