@@ -26,27 +26,26 @@ function string AluOp_symbol(AluOp op);
     endcase
 endfunction
 
-module alu(input AluOp operation, input Reg a, input Reg b, output Reg out);
-    always @ (*) begin
-        case (operation)
-        ADD: out = a + b;
-        SUB: out = a - b;
-        AND: out = a & b;
-        OR:  out = a | b;
-        XOR: out = a ^ b;
-        SLT: out = {31'b0, a < b};
-        SHL: out = a << b;
-        SHR: out = a >> b;
+module alu(input AluOp operation, input Word a, input Word b, output Word out);
+    always @ (out) `DBG($display("ALU: %0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b));
+    always @ (*) case (operation)
+        // using <= instead of = cleans up the debug prints above, and otherwise functions the same
+        ADD: out <= a + b;
+        SUB: out <= a - b;
+        AND: out <= a & b;
+        OR:  out <= a | b;
+        XOR: out <= a ^ b;
+        SLT: out <= {31'b0, a < b};
+        SHL: out <= a << b;
+        SHR: out <= a >> b;
     endcase
-    `DBG($display("ALU: %0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b));
-    end
 endmodule
 
 `ifdef TEST_alu
 module alu_tb;
-    Reg a, b;
+    Word a, b;
     AluOp op;
-    wire Reg out;
+    wire Word out;
 
     alu alu(op, a, b, out);
 

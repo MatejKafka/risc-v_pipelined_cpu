@@ -5,32 +5,29 @@
 /** Register file with 2 read ports and 1 write port. */
 module register_file (
         input clk, write_enable,
-        input RegAddress addr_write, addr1, addr2, input Reg in,
-        output Reg out1, out2);
+        input RegAddress addr_write, addr1, addr2, input Word in,
+        output Word out1, out2);
 
-    Reg registers[(1<<`REG_ADDRESS_WIDTH)-1:1]; // start from 1, register 0 is hardwired to 0
+    Word registers[1:(1<<$bits(RegAddress))-1]; // start from 1, register 0 is hardwired to 0
 
-    function Reg read_reg(RegAddress addr);
-        // register 0 is hardwired to 0
-        read_reg = addr == 0 ? 0 : registers[addr];
-    endfunction
-    function void write_reg(RegAddress addr, Reg value);
-        if (addr != 0) registers[addr] = value;
-    endfunction
+    // read ports
+    assign out1 = addr1 == 0 ? 0 : registers[addr1];
+    assign out2 = addr2 == 0 ? 0 : registers[addr2];
 
     always @ (posedge clk) begin
         // write port
-        if (write_enable) write_reg(addr_write, in);
-        // read ports
-        out1 = read_reg(addr1);
-        out2 = read_reg(addr2);
+        if (write_enable & addr_write != 0) begin
+            registers[addr_write] <= in;
+        end
     end
 
     task dump;
         RegAddress i;
+        Word val;
         $display("REGS:");
         i = 0; do begin
-            if (^read_reg(i) !== 1'bx) $display("  r%0d: %0d", i, read_reg(i));
+            val = i == 0 ? 0 : registers[i];
+            if (^val !== 1'bx) $display("  r%0d: %0d", i, val);
             i++;
         end while (i != 0);
     endtask
@@ -41,8 +38,8 @@ endmodule
 module register_file_tb;
     logic clk = 0, write_enable = 1;
     RegAddress addr_write, addr1, addr2;
-    Reg in;
-    wire Reg out1, out2;
+    Word in;
+    wire Word out1, out2;
 
     register_file rf(clk, write_enable, addr_write, addr1, addr2, in, out1, out2);
 
@@ -52,6 +49,9 @@ module register_file_tb;
     end
     initial begin
         RegAddress i;
+
+        addr1 = 10;
+
         // initialize all registers with (i*10)+1, then dump the contents
         i = 0; do begin
             addr_write = i;

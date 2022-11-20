@@ -2,13 +2,13 @@
 set -e
 
 visualize=0
-debug=
+debug=()
 target_rel=
 for arg in "$@"; do
     if [[ "$arg" == "-v" ]]; then
         visualize=1
     elif [[ "$arg" == "-d" ]]; then
-        debug="-DDEBUG"
+        debug=("-DDEBUG")
     else
         target_rel="$arg"
     fi
@@ -24,9 +24,9 @@ target_dir="$(dirname "$target")"
 src="$src_dir/$target_rel.sv"
 
 mkdir -p "$(dirname "$target")"
-# run verilator in --lint-only mode to get better error messages
-verilator --lint-only --timing -D"$tb_enabler" "$debug" -I"$src_dir" "$src"
-iverilog -g2012 -Wall -t vvp -D"$tb_enabler" "$debug" -I"$src_dir" -o "$target" "$src"
+# run slang in --lint-only mode to get better error messages
+slang.exe --lint-only -D"$tb_enabler" "${debug[@]}" -I"$(wslpath -w "$src_dir")" "$(wslpath -w "$src")" --quiet
+iverilog -g2012 -Wall -t vvp -D"$tb_enabler" "${debug[@]}" -I"$src_dir" -o "$target" "$src"
 cd "$target_dir"
 vvp "$target"
 
