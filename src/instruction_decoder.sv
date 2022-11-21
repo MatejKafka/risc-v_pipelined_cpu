@@ -81,6 +81,7 @@ module instruction_decoder(input Word in, output Instruction out);
 endmodule
 
 `ifdef TEST_instruction_decoder
+`include "instruction_macros.sv"
 module instruction_decoder_tb;
     Word in;
     wire Instruction out;
@@ -92,12 +93,14 @@ module instruction_decoder_tb;
         $dumpvars(0, instruction_decoder_tb);
     end
 
-    `define ADDI(RD, RS1, IMM) {12'(IMM), 5'(RS1), 3'b000, 5'(RD), 7'b0010011}
-    `define ADD(RD, RS1, RS2) {7'b0, 5'(RS2), 5'(RS1), 3'b000, 5'(RD), 7'b0110011}
     initial begin
         in = `ADDI(1, 0, -10);
         #1 Instruction_display(out);
         in = `ADD(1, 11, 10);
+        #1 Instruction_display(out);
+        in = `SUB(1, 11, 10);
+        #1 Instruction_display(out);
+        in = `AND(1, 11, 10);
         #1 Instruction_display(out);
     end
 endmodule

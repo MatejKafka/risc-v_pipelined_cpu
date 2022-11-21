@@ -21,6 +21,7 @@ module cpu(input clk, input AluOp op, input RegAddress dst, src1, src2, input Bo
 endmodule
 
 `ifdef TEST_cpu
+`include "instruction_macros.sv"
 module cpu_tb;
     reg clk = 0;
     int i = 0;
@@ -45,20 +46,21 @@ module cpu_tb;
         $dumpvars(0, cpu_tb);
     end
 
-    `define ADDI(RD, RS1, IMM) {12'(IMM), 5'(RS1), 3'b000, 5'(RD), 7'b0010011}
-    `define ADD(RD, RS1, RS2) {7'b0, 5'(RS2), 5'(RS1), 3'b000, 5'(RD), 7'b0110011}
-    `define SUB(RD, RS1, RS2) {7'b0100000, 5'(RS2), 5'(RS1), 3'b000, 5'(RD), 7'b0110011}
-    Word instructions[7];
+    // setup our test instructions
+    Word instructions[8];
     initial begin
-        instructions[0] = `ADDI(1, 0, 10);
-        instructions[1] = `ADDI(1, 1, 40);
-        instructions[2] = `ADDI(2, 1, 10);
-        instructions[3] = `ADDI(3, 2, 1);
-        instructions[4] = `ADDI(4, 3, 1);
-        instructions[5] = `SUB(5, 4, 1);
-        instructions[6] = {12'b000000000001, 13'b0, 7'b1110011}; // EBREAK
+        int j; j = 0;
+        instructions[j++] = `ADDI(1, 0, 10);
+        instructions[j++] = `ADDI(1, 1, 40);
+        instructions[j++] = `ADDI(2, 1, 10);
+        instructions[j++] = `ADDI(3, 2, 1);
+        instructions[j++] = `ADDI(4, 3, 1);
+        instructions[j++] = `SUB(5, 4, 1);
+        instructions[j++] = `AND(6, 1, 2);
+        instructions[j++] = `EBREAK;
     end
 
+    // simulate a primitive program counter
     assign raw_instruction = instructions[i];
     always begin
         if (!done) begin
@@ -71,7 +73,7 @@ module cpu_tb;
     always @ (posedge ebreak) begin
         $display("Executed EBREAK, finishing...");
         done = TRUE;
-        #0.5; // delay to let the last write finish
+        #0.5; // delay to let the last register write finish
         cpu.dump();
         $finish();
     end
