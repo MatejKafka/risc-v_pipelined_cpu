@@ -1,0 +1,58 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Mon Nov 21 17:02:01 2022
+[*]
+[dumpfile] "../build/cpu.vcd"
+[dumpfile_mtime] "Mon Nov 21 16:57:19 2022"
+[dumpfile_size] 6790
+[savefile] "./cpu.gtkw"
+[timestart] 0
+[size] 1536 841
+[pos] -1 -1
+*-14.000000 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.cpu_tb.
+[treeopen] TOP.cpu_tb.cpu.
+[sst_width] 197
+[signals_width] 174
+[sst_expanded] 1
+[sst_vpaned_height] 238
+@24
+TOP.cpu_tb.cpu.clk
+TOP.cpu_tb.cpu.alu.a[31:0]
+TOP.cpu_tb.cpu.alu.b[31:0]
+TOP.cpu_tb.cpu.alu.operation[3:0]
+TOP.cpu_tb.cpu.alu.out[31:0]
+@200
+-
+@24
+TOP.cpu_tb.cpu.regs.addr1[4:0]
+TOP.cpu_tb.cpu.regs.out1[31:0]
+TOP.cpu_tb.cpu.regs.addr2[4:0]
+TOP.cpu_tb.cpu.regs.out2[31:0]
+TOP.cpu_tb.cpu.regs.addr_write[4:0]
+TOP.cpu_tb.cpu.regs.in[31:0]
+@200
+-
+@100002029
+^1 ./AluOp.gtkw-filter
+TOP.cpu_tb.op[3:0]
+@22
+TOP.cpu_tb.dst[4:0]
+TOP.cpu_tb.src1[4:0]
+TOP.cpu_tb.src2[4:0]
+@28
+TOP.cpu_tb.has_immediate
+@24
+TOP.cpu_tb.imm[11:0]
+@200
+-
+@24
+TOP.cpu_tb.cpu.regs.registers[1][31:0]
+TOP.cpu_tb.cpu.regs.registers[2][31:0]
+TOP.cpu_tb.cpu.regs.registers[3][31:0]
+TOP.cpu_tb.cpu.regs.registers[4][31:0]
+TOP.cpu_tb.cpu.regs.registers[5][31:0]
+TOP.cpu_tb.cpu.regs.registers[6][31:0]
+[pattern_trace] 1
+[pattern_trace] 0

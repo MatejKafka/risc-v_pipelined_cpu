@@ -35,10 +35,10 @@ typedef logic [15:0] RomAddress;
 `endif
 
 task ansi(integer color_n);
-    $write("%c[1;%0dm", 27, color_n);
+    $write("%c[1;%0dm", 8'd27, color_n);
 endtask
 task ansi_reset;
-    $write("%c[0m", 27);
+    $write("%c[0m", 8'd27);
 endtask
 
 function void panic(string msg);
