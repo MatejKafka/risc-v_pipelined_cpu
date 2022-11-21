@@ -2,27 +2,34 @@
 `define PACKAGE_ALU
 `include "types.sv"
 
-typedef enum logic [2:0] {
-    ADD = 2,
-    SUB = 6,
-    AND = 0,
-    OR  = 1,
-    XOR = 3,
-    SLT = 7,
-    SHL = 4,
-    SHR = 5
+// the ALU op numbers correspond to their RV encoding {funct7[5], funct3} to simplify decoding
+// if this is changed, the RV decoder must be changed accordingly
+typedef enum logic [3:0] {
+    ADD  = 4'b0_000,
+    SUB  = 4'b1_000,
+    SLL  = 4'b0_001,
+    SLT  = 4'b0_010,
+    SLTU = 4'b0_011,
+    XOR  = 4'b0_100,
+    SRL  = 4'b0_101,
+    SRA  = 4'b1_101,
+    OR   = 4'b0_110,
+    AND  = 4'b0_111
 } AluOp;
 
 function string AluOp_symbol(AluOp op);
     case (op)
         ADD: AluOp_symbol = "+";
         SUB: AluOp_symbol = "-";
-        AND: AluOp_symbol = "&";
-        OR:  AluOp_symbol = "|";
+        SLL: AluOp_symbol = "<<";
+        SLT: AluOp_symbol = "<s";
+        SLTU:AluOp_symbol = "<u";
         XOR: AluOp_symbol = "^";
-        SLT: AluOp_symbol = "<";
-        SHL: AluOp_symbol = "<<";
-        SHR: AluOp_symbol = ">>";
+        SRL: AluOp_symbol = ">>";
+        SRA: AluOp_symbol = ">>>";
+        OR:  AluOp_symbol = "|";
+        AND: AluOp_symbol = "&";
+        default: panic("Invalid ALU operation.");
     endcase
 endfunction
 
@@ -30,15 +37,17 @@ module alu(input AluOp operation, input Word a, input Word b, output Word out);
     `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b))
 
     always @ (*) case (operation)
-        // using <= instead of = cleans up the debug prints above, and otherwise functions the same
-        ADD: out <= a + b;
-        SUB: out <= a - b;
-        AND: out <= a & b;
-        OR:  out <= a | b;
-        XOR: out <= a ^ b;
-        SLT: out <= {31'b0, a < b};
-        SHL: out <= a << b;
-        SHR: out <= a >> b;
+        ADD: out = a + b;
+        SUB: out = a - b;
+        SLL: out = a << b;
+        SLT: out = {31'b0, $signed(a) < $signed(b)};
+        SLTU:out = {31'b0, a < b};
+        XOR: out = a ^ b;
+        SRL: out = a >> b;
+        SRA: out = a >>> b;
+        OR:  out = a | b;
+        AND: out = a & b;
+        default: begin out = 'x; panic("Invalid ALU operation."); end
     endcase
 endmodule
 
@@ -55,13 +64,20 @@ module alu_tb;
         $dumpvars(0, alu_tb);
     end
     initial begin
+        automatic logic [2:0] op_main;
         a = 10;
         b = 7;
 
-        op = ADD; do begin
+        op_main = 0; do begin
+            $cast(op, {1'b0, op_main});
             #1 $display("%0d %0s %0d = %0d", a, AluOp_symbol(op), b, out);
-            op++;
-        end while (op != ADD);
+            op_main++;
+        end while (op_main != 0);
+
+        op = SUB;
+        #1 $display("%0d %0s %0d = %0d", a, AluOp_symbol(op), b, out);
+        op = SRA;
+        #1 $display("%0d %0s %0d = %0d", a, AluOp_symbol(op), b, out);
     end
 endmodule
 `endif
