@@ -4,6 +4,11 @@
 timeunit 1s;
 timeprecision 100ms;
 
+typedef enum logic {
+    TRUE = 1,
+    FALSE = 0
+} Bool;
+
 `define BYTES(D) ($bits(D) >> 3)
 
 typedef logic [31:0] Word;
@@ -35,5 +40,10 @@ endtask
 task ansi_reset;
     $write("%c[0m", 27);
 endtask
+
+function void panic(string msg);
+    $display("%s", msg);
+    $finish();
+endfunction
 
 `endif

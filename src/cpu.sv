@@ -3,14 +3,17 @@
 `include "types.sv"
 `include "alu.sv"
 `include "register_file.sv"
+`include "instruction_decoder.sv"
 
-module cpu(input clk, input AluOp op, input RegAddress dst, src1, input Word val2, output Word out);
+module cpu(input clk, input AluOp op, input RegAddress dst, src1, src2, input Bool has_immediate, input Word imm, output Word out);
     reg reg_write_enable = 1;
-    RegAddress src2 = 0;
     wire Word v1, v2;
+    wire Word aluB;
+
+    assign aluB = has_immediate ? imm : v2;
 
     register_file regs(clk, reg_write_enable, dst, src1, src2, out, v1, v2);
-    alu alu(op, v1, val2, out);
+    alu alu(op, v1, aluB, out);
 
     task dump;
         regs.dump();
@@ -19,53 +22,60 @@ endmodule
 
 `ifdef TEST_cpu
 module cpu_tb;
-    typedef struct packed {
-        AluOp op;
-        RegAddress dst;
-        RegAddress src;
-        Word imm;
-    } instruction;
-
-    instruction instructions[6];
-
     reg clk = 0;
-    RegAddress dst, src1;
-    Word val2;
+    int i = 0;
+    RegAddress dst, src1, src2;
+    Bool has_immediate;
+    Word imm;
+    Word raw_instruction;
+    wire Instruction instruction;
     wire Word out;
     AluOp op;
-    int i = 0;
+    wire Bool ebreak;
+    Bool done = FALSE;
 
-    cpu cpu(clk, op, dst, src1, val2, out);
+    instruction_decoder decoder(raw_instruction, instruction);
+    cpu cpu(clk, op, dst, src1, src2, has_immediate, imm, out);
+
+    // forward the parsed instruction to the CPU
+    assign {op, dst, src1, has_immediate, src2, imm, ebreak} = instruction;
 
     initial begin
         $dumpfile("cpu.vcd");
         $dumpvars(0, cpu_tb);
     end
+
+    `define ADDI(RD, RS1, IMM) {12'(IMM), 5'(RS1), 3'b000, 5'(RD), 7'b0010011}
+    `define ADD(RD, RS1, RS2) {7'b0, 5'(RS2), 5'(RS1), 3'b000, 5'(RD), 7'b0110011}
+    `define SUB(RD, RS1, RS2) {7'b0100000, 5'(RS2), 5'(RS1), 3'b000, 5'(RD), 7'b0110011}
+    Word instructions[7];
     initial begin
-        instructions[0] = {ADD, 5'd1, 5'd0, 32'd10};
-        instructions[1] = {SHL, 5'd1, 5'd1, 32'd3};
-        instructions[2] = {SUB, 5'd2, 5'd1, 32'd20};
-        instructions[3] = {ADD, 5'd3, 5'd2, 32'd1};
-        instructions[4] = {ADD, 5'd4, 5'd3, 32'd1};
-        instructions[5] = {ADD, 5'd5, 5'd4, 32'd1};
-        // $monitor("r%0d = r%0d %s %0d", dst, src1, AluOp_symbol(op), val2);
+        instructions[0] = `ADDI(1, 0, 10);
+        instructions[1] = `ADDI(1, 1, 40);
+        instructions[2] = `ADDI(2, 1, 10);
+        instructions[3] = `ADDI(3, 2, 1);
+        instructions[4] = `ADDI(4, 3, 1);
+        instructions[5] = `SUB(5, 4, 1);
+        instructions[6] = {12'b000000000001, 13'b0, 7'b1110011}; // EBREAK
     end
 
+    assign raw_instruction = instructions[i];
     always begin
-        clk <= !clk;
+        if (!done) begin
+            if (!clk) i <= i + 1;
+            clk <= !clk;
+        end
         #0.5;
     end
 
-    always @ (posedge clk) begin
-        if (i == $size(instructions)) begin
-            {op, dst, src1, val2} <= 0;
-            #1; // delay to let the last write finish
-            cpu.dump();
-            $finish();
-        end
-        {op, dst, src1, val2} <= instructions[i];
-        i <= i + 1;
+    always @ (posedge ebreak) begin
+        $display("Executed EBREAK, finishing...");
+        done = TRUE;
+        #0.5; // delay to let the last write finish
+        cpu.dump();
+        $finish();
     end
+
 endmodule
 `endif
 
