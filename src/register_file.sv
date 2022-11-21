@@ -26,12 +26,13 @@ module register_file (
     end
 
     task dump;
-        RegAddress i;
-        Word val;
+        automatic RegAddress i;
+        automatic Word val;
         $display("REGS:");
         i = 0; do begin
             val = i == 0 ? 0 : registers[i];
-            if (^val !== 1'bx) $display("  r%0d: %0d", i, val);
+            // check for X in iverilog; verilator does not simulate 4 valued logic, uninitialized regs are 0
+            if (^val !== 1'bx && val != 0) $display("  r%0d: %0d", i, val);
             i++;
         end while (i != 0);
     endtask
@@ -55,6 +56,7 @@ module register_file_tb;
         RegAddress i;
 
         addr1 = 10;
+        addr2 = 11;
 
         // initialize all registers with (i*10)+1, then dump the contents
         i = 0; do begin
@@ -65,6 +67,10 @@ module register_file_tb;
             #0.5;
             i++;
         end while (i != 0);
+
+        // check that the output value changed
+        $display("r10 = %0d", out1);
+        $display("r11 = %0d", out2);
 
         rf.dump();
     end
