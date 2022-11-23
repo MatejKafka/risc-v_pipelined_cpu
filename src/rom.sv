@@ -3,6 +3,8 @@
 `include "types.sv"
 
 module rom(input RomAddress address, output Word out);
+    `TRACE(address or out, 33, ("📁i address=0x%00h out=%0d", address, out))
+
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
@@ -11,8 +13,6 @@ module rom(input RomAddress address, output Word out);
 
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
-
-    `TRACE(address or out, 33, ("📁i address=0x%00h out=%0d", address, out))
 endmodule
 
 `ifdef TEST_rom

@@ -34,16 +34,28 @@ typedef logic [15:0] RomAddress;
 `define TRACE(what, color_n, display_expr)
 `endif
 
-task ansi(integer color_n);
+function void ansi(integer color_n);
     $write("%c[1;%0dm", 8'd27, color_n);
-endtask
-task ansi_reset;
+endfunction
+function void ansi_reset;
     $write("%c[0m", 8'd27);
-endtask
+endfunction
 
 function void panic(string msg);
     $display("%s", msg);
     $finish();
 endfunction
+
+// allow the testbench to supress error prints, especially before the initial reset
+Bool SUPRESS_ERRORS = FALSE;
+// assumes that `error` is an output signal
+`define ERROR(display_expr) do begin \
+        error = 1; \
+        if (!SUPRESS_ERRORS) begin \
+            ansi(31); \
+            $display display_expr; \
+            ansi_reset(); \
+        end \
+    end while (0)
 
 `endif

@@ -6,7 +6,9 @@ module ram(input clk, write_enable, input RamAddress address, input Word in, out
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
+    /* verilator lint_off SYNCASYNCNET */
     `TRACE(write_enable or address or in or out, 33, ("📁d we=%0d address=0x%00h in=%0d out=%0d", write_enable, address, in, out))
+    /* verilator lint_on SYNCASYNCNET */
 
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
@@ -16,14 +18,17 @@ module ram(input clk, write_enable, input RamAddress address, input Word in, out
         if (write_enable) memory[`WORD_ADDRESS(address)] <= in;
     end
 
-    task dump;
+    task dump();
         RamAddress i, word_size;
         Word w;
         word_size = $bits(word_size)'`BYTES(Word);
         $display("RAM:");
         i = 0; do begin
             w = memory[`WORD_ADDRESS(i)];
-            if (^w !== 1'bx) $display("  0x%00h = %0d", i, w);
+            // check for X in iverilog; verilator does not simulate 4 valued logic, uninitialized regs are all ones = -1
+            // this may have false positives, because -1 can be a common result of some computation, but it doesn't
+            //  matter too much, as this is just a debug method
+            if (^w !== 1'bx && w != 0 && w != -1) $display("  0x%00h = %0d", i, w);
             i += word_size;
         end while (i != 0);
     endtask
@@ -44,18 +49,17 @@ module ram_tb;
         $dumpvars(0, ram_tb);
     end
     initial begin
-        write(0, 0);
-        write(4, 4);
-        write(16, 16);
+        write(0, 1);
+        write(4, 2);
+        write(16, 3);
         ram.dump();
     end
 
     task write(RamAddress address_, Word value_);
         address = address_;
         in = value_;
-        clk = 1;
-        #0.5;
         clk = 0;
+        #0.5 clk = 1;
         #0.5;
     endtask
 endmodule
