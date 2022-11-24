@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
 visualize=0
 debug=()
@@ -32,7 +32,8 @@ slang.exe --lint-only --quiet \
 
 # compile to an executable
 verilator \
-    --binary --trace --build-jobs 0 -MAKEFLAGS "-s OPT_FAST=-O0 CXX=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++" -CFLAGS "-fuse-ld=mold" \
+    --binary --trace --build-jobs 0 \
+    -CFLAGS "-fuse-ld=mold" -MAKEFLAGS "-s OPT_FAST=-O0 CXX=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++" \
     -Wall -Wpedantic -Wno-EOFNEWLINE -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL \
     --x-assign 1 --x-initial unique \
     --top-module "$(basename "$target_rel")_tb" -D"$tb_enabler" "${debug[@]}" \
