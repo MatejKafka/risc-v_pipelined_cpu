@@ -7,8 +7,8 @@ timeprecision 100ms;
 const logic TRUE = 1;
 const logic FALSE = 0;
 
-// TODO: switch to a function
 `define BYTES(D) ($bits(D) >> 3)
+
 
 typedef logic [31:0] Word;
 // how many bits are needed to index all bytes of Word, useful for memory accesses
@@ -49,6 +49,43 @@ function string AluOp_symbol(AluOp op);
         OR:  AluOp_symbol = "|";
         AND: AluOp_symbol = "&";
         default: AluOp_symbol = "INVALID ALU OPERATION";
+    endcase
+endfunction
+
+function string Reg_name(RegAddress r);
+    case (r)
+        0:  return "zero";
+        1:  return "ra";
+        2:  return "sp";
+        3:  return "gp";
+        4:  return "tp";
+        5:  return "t0";
+        6:  return "t1";
+        7:  return "t2";
+        8:  return "s0";
+        9:  return "s1";
+        10: return "a0";
+        11: return "a1";
+        12: return "a2";
+        13: return "a3";
+        14: return "a4";
+        15: return "a5";
+        16: return "a6";
+        17: return "a7";
+        18: return "s2";
+        19: return "s3";
+        20: return "s4";
+        21: return "s5";
+        22: return "s6";
+        23: return "s7";
+        24: return "s8";
+        25: return "s9";
+        26: return "s10";
+        27: return "s11";
+        28: return "t3";
+        29: return "t4";
+        30: return "t5";
+        31: return "t6";
     endcase
 endfunction
 

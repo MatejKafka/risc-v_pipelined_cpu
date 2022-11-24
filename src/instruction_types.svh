@@ -49,10 +49,10 @@ function string Instruction_to_string(Instruction i);
     else if (f.is_ebreak) return "EBREAK";
     else if (f.is_branch) return $sformatf("BRANCH alu_zero=%0d rs1=%0d rs2=%0d jump=%0d", f.alu_should_be_zero, i.rs1, i.rs2, i.immediate);
     else begin
-        return $sformatf("%s rd=%0d rs1=%0d %0s=%0d", f.ram_write ? "SW" : f.ram_read_to_rd ? "LW" : i.alu_op.name(),
-                i.rd, i.rs1,
+        return $sformatf("%s rd=%s rs1=%s %0s=%s", f.ram_write ? "SW" : f.ram_read_to_rd ? "LW" : i.alu_op.name(),
+                Reg_name(i.rd), Reg_name(i.rs1),
                 f.alu_use_imm ? "imm" : "rs2",
-                f.alu_use_imm ? i.immediate : $signed(Immediate'({1'b0, i.rs2})));
+                f.alu_use_imm ? $sformatf("%0d", i.immediate) : Reg_name(i.rs2));
     end
 endfunction
 

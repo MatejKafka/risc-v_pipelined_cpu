@@ -12,9 +12,9 @@ module register_file (
     Word registers[1:(1<<$bits(RegAddress))-1]; // start from 1, register 0 is hardwired to 0
 
     /* verilator lint_off SYNCASYNCNET */
-    `TRACE(addr1 or out1, 39, ("🧾0x%00h => %0d", addr1, out1))
-    `TRACE(addr2 or out2, 39, ("🧾0x%00h => %0d", addr2, out2))
-    `TRACE(registers[addr_write], 39, ("🧾0x%00h <= %0d", addr_write, in))
+    `TRACE(addr1 or out1, 39, ("🧾%s => %0d", Reg_name(addr1), out1))
+    `TRACE(addr2 or out2, 39, ("🧾%s => %0d", Reg_name(addr2), out2))
+    `TRACE(registers[addr_write], 39, ("🧾%s <= %0d", Reg_name(addr_write), in))
     /* verilator lint_on SYNCASYNCNET */
 
     // read ports
@@ -44,7 +44,7 @@ module register_file (
             // check for X in iverilog; verilator does not simulate 4 valued logic, uninitialized regs are all ones = -1
             // this may have false positives, because -1 can be a common result of some computation, but it doesn't
             //  matter too much, as this is just a debug method
-            if (^val !== 1'bx && val != 0 && val != -1) $display("  r%0d: %0d", i, $signed(val));
+            if (^val !== 1'bx && val != 0 && val != -1) $display("  %s: %0d", Reg_name(i), $signed(val));
             i++;
         end while (i != 0);
     endtask
