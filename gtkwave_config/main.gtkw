@@ -1,0 +1,103 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Thu Nov 24 16:14:21 2022
+[*]
+[dumpfile] "../build/main.vcd"
+[dumpfile_mtime] "Thu Nov 24 16:14:16 2022"
+[dumpfile_size] 20777
+[savefile] "./main.gtkw"
+[timestart] 0
+[size] 1920 1051
+[pos] -1 -1
+*-12.920348 30000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] main_tb.
+[treeopen] main_tb.computer.
+[treeopen] main_tb.computer.cpu.
+[sst_width] 239
+[signals_width] 210
+[sst_expanded] 1
+[sst_vpaned_height] 314
+@28
+main_tb.computer.cpu.stop
+@24
+[color] 4
+main_tb.computer.cpu.error[1:0]
+[color] 4
+main_tb.computer.reset
+[color] 4
+main_tb.computer.clk
+@200
+-
+@28
+main_tb.computer.cpu.should_branch
+@200
+-
+@22
+[color] 2
+main_tb.computer.cpu.rom_address[15:0]
+@2028
+[color] 2
+^1 ./Instruction.gtkw-filter
+main_tb.computer.cpu.rom_data[31:0]
+@200
+-
+@2028
+[color] 7
+^2 ./AluOp.gtkw-filter
+main_tb.computer.cpu.alu.operation[3:0]
+@420
+[color] 7
+main_tb.computer.cpu.alu.a[31:0]
+[color] 7
+main_tb.computer.cpu.alu.b[31:0]
+[color] 7
+main_tb.computer.cpu.alu.out[31:0]
+@200
+-
+@2024
+[color] 1
+^3 ./Reg.gtkw-filter
+main_tb.computer.cpu.register_file.addr_write[4:0]
+@25
+[color] 1
+main_tb.computer.cpu.register_file.in[31:0]
+@2024
+[color] 1
+^3 ./Reg.gtkw-filter
+main_tb.computer.cpu.register_file.addr1[4:0]
+@420
+[color] 1
+main_tb.computer.cpu.register_file.out1[31:0]
+@2024
+[color] 1
+^3 ./Reg.gtkw-filter
+main_tb.computer.cpu.register_file.addr2[4:0]
+@420
+[color] 1
+main_tb.computer.cpu.register_file.out2[31:0]
+@200
+-
+@28
+[color] 3
+main_tb.computer.ram.write_enable
+@22
+[color] 3
+main_tb.computer.ram.address[7:0]
+@24
+[color] 3
+main_tb.computer.ram.in[31:0]
+[color] 3
+main_tb.computer.ram.out[31:0]
+@200
+-
+@24
+main_tb.computer.cpu.register_file.registers[1][31:0]
+main_tb.computer.cpu.register_file.registers[2][31:0]
+main_tb.computer.cpu.register_file.registers[3][31:0]
+main_tb.computer.cpu.register_file.registers[4][31:0]
+main_tb.computer.cpu.register_file.registers[5][31:0]
+main_tb.computer.cpu.register_file.registers[6][31:0]
+main_tb.computer.cpu.register_file.registers[7][31:0]
+main_tb.computer.cpu.register_file.registers[8][31:0]
+[pattern_trace] 1
+[pattern_trace] 0

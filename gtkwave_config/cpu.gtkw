@@ -4,12 +4,12 @@
 [*]
 [dumpfile] "../build/cpu.vcd"
 [dumpfile_mtime] "Wed Nov 23 03:36:47 2022"
-[dumpfile_size] 16860
+[dumpfile_size] 18445
 [savefile] "./cpu.gtkw"
-[timestart] 9300
+[timestart] 139690
 [size] 1920 1051
-[pos] -1 -1
-*-14.920348 156600 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -10 -10
+*-13.920348 139840 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.cpu.
 [sst_width] 239
@@ -29,8 +29,7 @@ cpu_tb.clk
 -
 @28
 cpu_tb.cpu.should_branch
-@100000029
-cpu_tb.cpu.flags[4:0]
+cpu_tb.cpu.flags[6:0]
 @200
 -
 @22
@@ -78,6 +77,19 @@ cpu_tb.cpu.register_file.addr2[4:0]
 cpu_tb.cpu.register_file.out2[31:0]
 @200
 -
+@28
+[color] 3
+cpu_tb.ram.write_enable
+@22
+[color] 3
+cpu_tb.ram.address[7:0]
+@24
+[color] 3
+cpu_tb.ram.in[31:0]
+[color] 3
+cpu_tb.ram.out[31:0]
+@200
+-
 @24
 cpu_tb.cpu.register_file.registers[1][31:0]
 cpu_tb.cpu.register_file.registers[2][31:0]
@@ -86,5 +98,6 @@ cpu_tb.cpu.register_file.registers[4][31:0]
 cpu_tb.cpu.register_file.registers[5][31:0]
 cpu_tb.cpu.register_file.registers[6][31:0]
 cpu_tb.cpu.register_file.registers[7][31:0]
+cpu_tb.cpu.register_file.registers[8][31:0]
 [pattern_trace] 1
 [pattern_trace] 0
