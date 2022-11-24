@@ -92,6 +92,9 @@ module main_tb;
 
     // if the CPU raises an error, show it to the user and terminate
     initial @ (posedge error) begin
+        // wait a before an exit to get all debug prints; the prints are only done
+        //  at the end of a tick, when the non-blocking assignments are applied
+        @ (negedge clk);
         if (cpu_error.decoder) `PANIC("Illegal instruction encountered.");
         if (cpu_error.alu) `PANIC("ALU error ocurred.");
         // huh?
