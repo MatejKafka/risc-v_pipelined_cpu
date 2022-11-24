@@ -1,8 +1,9 @@
 `ifndef PACKAGE_RAM
 `define PACKAGE_RAM
-`include "types.sv"
+`include "types.svh"
+`include "utils.svh"
 
-module ram(input clk, write_enable, input RamAddress address, input Word in, output Word out);
+module ram(input clk, reset, write_enable, input RamAddress address, input Word in, output Word out);
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
@@ -14,9 +15,20 @@ module ram(input clk, write_enable, input RamAddress address, input Word in, out
     assign out = memory[`WORD_ADDRESS(address)];
 
     always @ (posedge clk) begin
+        if (reset) clear();
         // write port
-        if (write_enable) memory[`WORD_ADDRESS(address)] <= in;
+        else if (write_enable) memory[`WORD_ADDRESS(address)] <= in;
     end
+
+    task clear();
+        // we cannot use <=, verilator will complain that it do non-blocking assignment in loops longer than 256;
+        //  I hope using blocking assignment here shouldn't cause too much trouble with timing
+        /* verilator lint_off BLKSEQ */
+        foreach (memory[i]) begin
+            memory[i] = 0;
+        end
+        /* verilator lint_on BLKSEQ */
+    endtask
 
     task dump();
         RamAddress i, word_size;
@@ -25,10 +37,8 @@ module ram(input clk, write_enable, input RamAddress address, input Word in, out
         $display("RAM:");
         i = 0; do begin
             w = memory[`WORD_ADDRESS(i)];
-            // check for X in iverilog; verilator does not simulate 4 valued logic, uninitialized regs are all ones = -1
-            // this may have false positives, because -1 can be a common result of some computation, but it doesn't
-            //  matter too much, as this is just a debug method
-            if (^w !== 1'bx && w != 0 && w != -1) $display("  0x%00h = %0d", i, w);
+            // skip (probably) unused slots
+            if (w != 0) $display("  0x%h = %0d", i, $signed(w));
             i += word_size;
         end while (i != 0);
     endtask
@@ -37,23 +47,31 @@ endmodule
 
 `ifdef TEST_ram
 module ram_tb;
-    reg clk = 0, write_enable = 1;
+    reg clk = 0, reset, write_enable = 1;
     RamAddress address;
     Word in;
-    wire Word out;
+    Word out;
 
-    ram ram(clk, write_enable, address, in, out);
+    ram ram(clk, reset, write_enable, address, in, out);
 
     initial begin
         $dumpfile("ram.vcd");
         $dumpvars(0, ram_tb);
     end
     initial begin
+        reset_ram();
         write(0, 1);
         write(4, 2);
         write(16, 3);
         ram.dump();
     end
+
+    task reset_ram();
+        reset = 1;
+        clk = 0;
+        #0.5 clk = 1;
+        #0.5 reset = 0;
+    endtask
 
     task write(RamAddress address_, Word value_);
         address = address_;

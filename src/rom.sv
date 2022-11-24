@@ -1,6 +1,7 @@
 `ifndef PACKAGE_ROM
 `define PACKAGE_ROM
-`include "types.sv"
+`include "types.svh"
+`include "utils.svh"
 
 module rom(input RomAddress address, output Word out);
     `TRACE(address or out, 33, ("📁i address=0x%00h out=%0d", address, out))
@@ -8,17 +9,23 @@ module rom(input RomAddress address, output Word out);
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
-    // load up "rom.mem" to the ROM
-    initial $readmemh("rom.mem", memory);
-
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
+
+    // load up `main.bin` to the ROM
+    initial begin
+        automatic int fd;
+        fd = $fopen("../risc-v_programs/main.bin", "rb");
+        if (fd == 0) `PANIC("ROM: Could not load the program from '../risc-v_programs/main.bin'. Does the file exist?");
+        else if ($fread(memory, fd) == 0) `PANIC("ROM: The loaded program file seems empty.");
+        else $fclose(fd);
+    end
 endmodule
 
 `ifdef TEST_rom
 module rom_tb;
-    RamAddress address;
-    wire Word out;
+    RomAddress address;
+    Word out;
 
     rom rom(address, out);
 
@@ -31,7 +38,6 @@ module rom_tb;
         show(0);
         show(4);
         show(8);
-        show('hffff);
     end
 
     task show(RomAddress address_);

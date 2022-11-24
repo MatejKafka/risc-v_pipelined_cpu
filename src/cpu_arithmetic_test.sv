@@ -3,19 +3,17 @@
 //
 `ifndef PACKAGE_CPU_ARITHMETIC_TEST
 `define PACKAGE_CPU_ARITHMETIC_TEST
-`include "types.sv"
+`include "types.svh"
+`include "instruction_types.svh"
 `include "alu.sv"
 `include "register_file.sv"
-`include "instruction_types.sv"
 
 module cpu(input clk, input AluOp op, input RegAddress dst, src1, src2, input has_immediate, input Immediate imm, output Word out);
     reg reg_reset = 0;
-    wire Word v1, v2;
-    wire Word aluB;
-    wire unused_error;
-    wire unused_is_out_zero;
+    Word v1, v2;
+    Word aluB;
+    logic unused_error, unused_is_out_zero;
 
-    // FIXME: is the Word'(...) a cast, or a replication?
     assign aluB = has_immediate ? Word'(imm) : v2;
 
     register_file regs(clk, reg_reset, dst, src1, src2, out, v1, v2);
@@ -23,16 +21,16 @@ module cpu(input clk, input AluOp op, input RegAddress dst, src1, src2, input ha
 endmodule
 
 `ifdef TEST_cpu_arithmetic_test
-`include "instruction_macros.sv"
+`include "instruction_macros.svh"
 module cpu_arithmetic_test_tb;
     reg clk = 1;
-    wire error;
+    logic error;
     RegAddress dst, src1, src2;
-    wire has_immediate;
+    logic has_immediate;
     Immediate imm;
-    wire Word out;
+    Word out;
     AluOp op;
-    wire ebreak;
+    logic ebreak;
     InstructionFlags flags;
 
     cpu cpu(clk, op, dst, src1, src2, has_immediate, imm, out);

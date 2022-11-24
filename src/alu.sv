@@ -1,41 +1,11 @@
 `ifndef PACKAGE_ALU
 `define PACKAGE_ALU
-`include "types.sv"
+`include "types.svh"
+`include "utils.svh"
 
-// the ALU op numbers correspond to their RV encoding {funct7[5], funct3} to simplify decoding
-// if this is changed, the RV decoder must be changed accordingly
-typedef enum logic [3:0] {
-    ADD  = 4'b0_000,
-    SUB  = 4'b1_000,
-    SLL  = 4'b0_001,
-    SLT  = 4'b0_010,
-    SLTU = 4'b0_011,
-    XOR  = 4'b0_100,
-    SRL  = 4'b0_101,
-    SRA  = 4'b1_101,
-    OR   = 4'b0_110,
-    AND  = 4'b0_111
-} AluOp;
-
-function string AluOp_symbol(AluOp op);
-    case (op)
-        ADD: AluOp_symbol = "+";
-        SUB: AluOp_symbol = "-";
-        SLL: AluOp_symbol = "<<";
-        SLT: AluOp_symbol = "<s";
-        SLTU:AluOp_symbol = "<u";
-        XOR: AluOp_symbol = "^";
-        SRL: AluOp_symbol = ">>";
-        SRA: AluOp_symbol = ">>>";
-        OR:  AluOp_symbol = "|";
-        AND: AluOp_symbol = "&";
-        default: AluOp_symbol = "--ALU-ERROR--";
-    endcase
-endfunction
-
-module alu(output reg error, input AluOp operation, input Word a, input Word b, output Word out, output Bool is_out_zero);
+module alu(output logic error, input AluOp operation, input Word a, input Word b, output Word out, output logic is_out_zero);
     /* verilator lint_off SYNCASYNCNET */
-    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", out, $signed(a), AluOp_symbol(operation), $signed(b)))
+    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", $signed(out), $signed(a), AluOp_symbol(operation), $signed(b)))
     /* verilator lint_on SYNCASYNCNET */
 
     always @ (*) begin
@@ -53,17 +23,17 @@ module alu(output reg error, input AluOp operation, input Word a, input Word b, 
             AND: out = a & b;
             default: begin out = 'x; `ERROR(("Invalid ALU instruction")); end
         endcase
-        is_out_zero = Bool'(out == 0);
+        is_out_zero = out == 0;
     end
 endmodule
 
 `ifdef TEST_alu
 module alu_tb;
-    wire unused_error;
+    logic unused_error;
     Word a, b;
     AluOp op;
-    wire Word out;
-    wire Bool is_out_zero;
+    Word out;
+    logic is_out_zero;
 
     alu alu(unused_error, op, a, b, out, is_out_zero);
 
@@ -98,9 +68,9 @@ module alu_tb;
         display_op(FALSE);
     end
 
-    task display_op(Bool signed_);
+    task display_op(logic is_signed);
         #1;
-        if (signed_) $display("%0d %0s %0d = %0d%s", $signed(a), AluOp_symbol(op),
+        if (is_signed) $display("%0d %0s %0d = %0d%s", $signed(a), AluOp_symbol(op),
                 $signed(b), $signed(out), is_out_zero ? " (=0)" : "");
         else $display("%0d %0s %0d = %0d%s", a, AluOp_symbol(op), b, out, is_out_zero ? " (=0)" : "");
     endtask

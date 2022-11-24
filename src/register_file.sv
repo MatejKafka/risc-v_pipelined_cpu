@@ -1,6 +1,7 @@
 `ifndef PACKAGE_REGISTER_FILE
 `define PACKAGE_REGISTER_FILE
-`include "types.sv"
+`include "types.svh"
+`include "utils.svh"
 
 /** Register file with 2 read ports and 1 write port. */
 module register_file (
@@ -43,7 +44,7 @@ module register_file (
             // check for X in iverilog; verilator does not simulate 4 valued logic, uninitialized regs are all ones = -1
             // this may have false positives, because -1 can be a common result of some computation, but it doesn't
             //  matter too much, as this is just a debug method
-            if (^val !== 1'bx && val != 0 && val != -1) $display("  r%0d: %0d", i, val);
+            if (^val !== 1'bx && val != 0 && val != -1) $display("  r%0d: %0d", i, $signed(val));
             i++;
         end while (i != 0);
     endtask
@@ -55,7 +56,7 @@ module register_file_tb;
     logic clk = 0, reset = 0;
     RegAddress addr_write, addr1, addr2;
     Word in;
-    wire Word out1, out2;
+    Word out1, out2;
 
     register_file rf(clk, reset, addr_write, addr1, addr2, in, out1, out2);
 

@@ -1,6 +1,6 @@
 `ifndef PACKAGE_PROGRAM_COUNTER
 `define PACKAGE_PROGRAM_COUNTER
-`include "types.sv"
+`include "types.svh"
 
 module program_counter(
         input clk, reset,
@@ -26,7 +26,7 @@ module program_counter_tb;
     reg clk = 1, reset = 1;
     reg should_branch;
     RomAddress pc_delta;
-    wire RomAddress current_pc, unused_next_pc;
+    RomAddress current_pc, unused_next_pc;
 
     program_counter pc(clk, reset, should_branch, pc_delta, current_pc, unused_next_pc);
 
