@@ -3,11 +3,11 @@
 `include "types.svh"
 `include "utils.svh"
 
-module rom(input RomAddress address, output Word out);
+module rom(input RomAddress address, output UWord out);
     `TRACE(address or out, 33, ("📁i address=0x%h out=0x%h", address, out))
 
-    // addresses are in bytes, but our slots are Word-sized
-    Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
+    // addresses are in bytes, but our slots are UWord-sized
+    UWord memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
@@ -28,7 +28,7 @@ endmodule
 `ifdef TEST_rom
 module rom_tb;
     RomAddress address;
-    Word out;
+    UWord out;
 
     rom rom(address, out);
 

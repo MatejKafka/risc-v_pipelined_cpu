@@ -26,7 +26,7 @@ endmodule
  */
 module computer(input clk, reset, output cpu_stop, output CpuError cpu_error);
     RomAddress rom_address;
-    Word rom_out;
+    UWord rom_out;
     rom rom(rom_address, rom_out);
 
     RamAddress ram_address;

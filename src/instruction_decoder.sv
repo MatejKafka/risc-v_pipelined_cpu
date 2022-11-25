@@ -10,7 +10,7 @@
 `define SIGILL(display_expr) do begin `ERROR(display_expr); return `NOP_INSTRUCTION; end while (0)
 
 // Note that the instruction decoder uses fixed type sizes, unlike the rest of the project.
-module instruction_decoder(output reg error, input Word in, output Instruction out);
+module instruction_decoder(output reg error, input UWord in, output Instruction out);
     `TRACE(in or out, 32, ("🈯%s", error ? $sformatf("Invalid instruction (0x%h)", in) : Instruction_to_string(out)))
 
     // continuously decode instructions
@@ -18,7 +18,7 @@ module instruction_decoder(output reg error, input Word in, output Instruction o
 
     // read the opcode, call the corresponding function to handle that type of instructions
     // since not all opcodes have a standard name, some of the names are made up (like IA = "immediate arithmetic")
-    function Instruction decode_instruction(Word i);
+    function Instruction decode_instruction(UWord i);
         error = 0;
         case (i[6:0])
             'b0110111: return decode_LUI(i[31:                             12], i[11:7]);
@@ -137,7 +137,7 @@ endmodule
 `include "instruction_macros.svh"
 module instruction_decoder_tb;
     logic error;
-    Word in;
+    UWord in;
     Instruction out;
 
     instruction_decoder decoder(error, in, out);

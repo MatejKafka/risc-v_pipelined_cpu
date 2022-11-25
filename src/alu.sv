@@ -5,7 +5,7 @@
 
 module alu(output logic error, input AluOp operation, input Word a, input Word b, output Word out, output logic is_out_zero);
     /* verilator lint_off SYNCASYNCNET */
-    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", $signed(out), $signed(a), AluOp_symbol(operation), $signed(b)))
+    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b))
     /* verilator lint_on SYNCASYNCNET */
 
     always @ (*) begin
@@ -15,7 +15,7 @@ module alu(output logic error, input AluOp operation, input Word a, input Word b
             SUB: out = a - b;
             SLL: out = a << b;
             SLT: out = {31'b0, $signed(a) < $signed(b)};
-            SLTU:out = {31'b0, a < b};
+            SLTU:out = {31'b0, $unsigned(a) < $unsigned(b)};
             XOR: out = a ^ b;
             SRL: out = a >> b;
             SRA: out = a >>> b;
@@ -70,9 +70,8 @@ module alu_tb;
 
     task display_op(logic is_signed);
         #1;
-        if (is_signed) $display("%0d %0s %0d = %0d%s", $signed(a), AluOp_symbol(op),
-                $signed(b), $signed(out), is_out_zero ? " (=0)" : "");
-        else $display("%0d %0s %0d = %0d%s", a, AluOp_symbol(op), b, out, is_out_zero ? " (=0)" : "");
+        if (is_signed) $display("%0d %0s %0d = %0d%s", a, AluOp_symbol(op), b, out, is_out_zero ? " (=0)" : "");
+        else $display("%0d %0s %0d = %0d%s", $unsigned(a), AluOp_symbol(op), $unsigned(b), $unsigned(out), is_out_zero ? " (=0)" : "");
     endtask
 endmodule
 `endif

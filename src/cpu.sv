@@ -23,8 +23,8 @@ typedef struct packed {
  */
 module cpu(
         input clk, reset, output stop, output CpuError error,
-        input Word rom_data, output RomAddress rom_address,
-        input Word ram_data, output RamAddress ram_address, output ram_write_enable, output Word ram_write_data);
+        input UWord rom_data, output RomAddress rom_address,
+        input  Word ram_data, output RamAddress ram_address, output ram_write_enable, output Word ram_write_data);
 
     reg should_branch;
     RomAddress pc, next_pc;
@@ -74,7 +74,7 @@ module cpu_tb;
     CpuError error;
 
     RomAddress rom_address;
-    Word rom_data;
+    UWord rom_data;
 
     Word ram_data;
     RamAddress ram_address;
@@ -88,7 +88,7 @@ module cpu_tb;
 
 
     // for unit testing, we want to avoid using ROM, so we'll use a hardcoded list of instructions
-    Word rom_simulated[22] = '{
+    UWord rom_simulated[22] = '{
         `R_ADDI(1, 0, 10),
         `R_ADDI(1, 1, 50),
         `R_ADDI(2, 1, 5),

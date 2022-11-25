@@ -10,7 +10,8 @@ const logic FALSE = 0;
 `define BYTES(D) ($bits(D) >> 3)
 
 
-typedef logic [31:0] Word;
+typedef logic signed [31:0] Word;
+typedef logic unsigned [31:0] UWord;
 // how many bits are needed to index all bytes of Word, useful for memory accesses
 `define WORD_ADDRESS_SIZE $clog2(`BYTES(Word))
 // convert address to a word index (e.g. with 32bit Word, 0xC is converted to 3)

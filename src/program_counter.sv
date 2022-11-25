@@ -12,7 +12,7 @@ module program_counter(
     // also, in a real CPU, we'd probably want to compute this ASAP, so that when we
     //  figure out if we should take the branch (e.g. for BEQ), we have both values ready
     RomAddress branch_target;
-    assign next_pc = current_pc + RomAddress'(`BYTES(Word)); // +4 for 32bit Word
+    assign next_pc = current_pc + RomAddress'(`BYTES(UWord)); // +4 for 32bit UWord
     assign branch_target = current_pc + pc_delta;
 
     always @ (posedge clk) begin

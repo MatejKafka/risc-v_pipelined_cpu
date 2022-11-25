@@ -8,7 +8,7 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
     /* verilator lint_off SYNCASYNCNET */
-    `TRACE(write_enable or address or in or out, 33, ("📁d we=%0d address=0x%00h in=%0d out=%0d", write_enable, address, in, out))
+    `TRACE(write_enable or address or in or out, 33, ("📁d we=%0d address=0x%h in=%0d out=%0d", write_enable, address, in, out))
     /* verilator lint_on SYNCASYNCNET */
 
     // read port
@@ -31,16 +31,11 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
     endtask
 
     task dump();
-        RamAddress i, word_size;
-        Word w;
-        word_size = $bits(word_size)'`BYTES(Word);
         $display("RAM:");
-        i = 0; do begin
-            w = memory[`WORD_ADDRESS(i)];
+        foreach (memory[i]) begin
             // skip (probably) unused slots
-            if (w != 0) $display("  0x%h = %0d", i, $signed(w));
-            i += word_size;
-        end while (i != 0);
+            if (memory[i] != 0) $display("  0x%h = %0d", RamAddress'(i), memory[i]);
+        end
     endtask
 
 endmodule
