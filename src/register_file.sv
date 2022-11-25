@@ -12,9 +12,9 @@ module register_file (
     Word registers[1:(1<<$bits(RegAddress))-1]; // start from 1, register 0 is hardwired to 0
 
     /* verilator lint_off SYNCASYNCNET */
-    `TRACE(addr1 or out1, 39, ("🧾%s => %0d", Reg_name(addr1), out1))
-    `TRACE(addr2 or out2, 39, ("🧾%s => %0d", Reg_name(addr2), out2))
-    `TRACE(registers[addr_write], 39, ("🧾%s <= %0d", Reg_name(addr_write), in))
+    `TRACE(addr1 or out1, 39, ("🧾%s => %0d", Reg_name(addr1), $signed(out1)))
+    `TRACE(addr2 or out2, 39, ("🧾%s => %0d", Reg_name(addr2), $signed(out2)))
+    `TRACE(registers[addr_write], 39, ("🧾%s <= %0d", Reg_name(addr_write), $signed(in)))
     /* verilator lint_on SYNCASYNCNET */
 
     // read ports

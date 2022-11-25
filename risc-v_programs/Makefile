@@ -16,7 +16,7 @@ all: run
 
 %.memh: %.dump
 	@# disassemble the '_start' function and get the hex values of the instructions
-	cat $^ | sed -e '1,/<_start>:/ d' | awk '{ print($$2) }' >$@
+	cat $^ | sed -E '1,/<(_start|.text)>:/ d' | awk '{ print($$2) }' >$@
 
 
 build: gcd.memh
@@ -25,10 +25,11 @@ run: gcd.memh
 	../test.sh main
 
 debug: gcd.memh
-	../test.sh main -d
+	@# prints all instructions as they're decoded
+	../test.sh main -d | grep -E "🈯|📁i" | sed -nE 'N; s/📁i address=(0x[0-9a-f]+) out=0x[0-9a-f]+....\n(.......)🈯/🈯\1: \2/p; D'
 
 dump: gcd.dump
-	cat $^ | sed -e '1,/<_start>:/ d'
+	cat $^ | sed -E '1,/<(_start|.text)>:/ d'
 
 test-decode:
 	../test.sh rom_decode_test

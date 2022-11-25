@@ -11,7 +11,7 @@
 
 // Note that the instruction decoder uses fixed type sizes, unlike the rest of the project.
 module instruction_decoder(output reg error, input Word in, output Instruction out);
-    `TRACE(in or out, 32, ("🈯%s", Instruction_to_string(out)))
+    `TRACE(in or out, 32, ("🈯%s", error ? $sformatf("Invalid instruction (0x%h)", in) : Instruction_to_string(out)))
 
     // continuously decode instructions
     assign out = decode_instruction(in);

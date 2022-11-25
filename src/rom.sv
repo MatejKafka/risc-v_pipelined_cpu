@@ -4,7 +4,7 @@
 `include "utils.svh"
 
 module rom(input RomAddress address, output Word out);
-    `TRACE(address or out, 33, ("📁i address=0x%00h out=0x%h", address, out))
+    `TRACE(address or out, 33, ("📁i address=0x%h out=0x%h", address, out))
 
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
