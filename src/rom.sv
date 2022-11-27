@@ -15,14 +15,20 @@ module rom(input RomAddress address, output UWord out);
     // load up `gcd.memh` to the ROM
     initial $readmemh("../risc-v_programs/gcd.memh", memory);
 
-    // // load up `gcd.bin` to the ROM
     // initial begin
-    //     automatic int fd;
-    //     fd = $fopen("../risc-v_programs/gcd.bin", "rb");
-    //     if (fd == 0) `PANIC("ROM: Could not load the program from '../risc-v_programs/gcd.bin'. Does the file exist?");
-    //     else if ($fread(memory, fd) == 0) `PANIC("ROM: The loaded program file seems empty.");
-    //     else $fclose(fd);
+    //    fd = $fopen(rom_path, "rb");
+    //    if (fd == 0) `PANIC($sformatf("ROM: Could not load the program from '%s'. Does the file exist?", rom_path));
+    //    else if ($fread(memory, fd) == 0) `PANIC("ROM: The loaded program file seems empty.");
+    //    else $fclose(fd);
     // end
+
+    task dump();
+        $display("ROM:");
+        foreach (memory[i]) begin
+            // skip (probably) unused slots
+            if (memory[i] != -1) $display("  0x%h = 0x%h", RomAddress'(i), memory[i]);
+        end
+    endtask
 endmodule
 
 `ifdef TEST_rom

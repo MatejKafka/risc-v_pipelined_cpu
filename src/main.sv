@@ -76,9 +76,12 @@ module main_tb;
         error_enabled <= 1;
     end
 
+    // the reset is completed
+    initial @ (negedge reset) $display("CPU started.");
+
     // now we wait until the CPU stops (outside of the initial reset)
     initial @ (posedge (cpu_stop & !reset)) begin
-        $display("Received a `cpu_stop` signal, stopping...");
+        $display("Received a stop signal from the CPU, stopping...");
         // wait until the next tick to see the final state (non-blocking assignment
         //  is used inside the CPU, so the last writes are only visible after this tick)
         @ (posedge clk);

@@ -4,6 +4,7 @@
 `include "utils.svh"
 `include "ram.sv"
 `include "alu.sv"
+`include "alu_comparator.sv"
 `include "register_file.sv"
 `include "instruction_decoder.sv"
 
@@ -17,7 +18,6 @@ typedef struct packed {
  *
  * It implements all instructions from RV32I Base Instruction Set, except for:
  *  - load/store instructions for byte and short (the CPU only supports Word-aligned memory access with Word-sized values)
- *  - JALR  (useful, but would require reworking my program counter to accept the full PC from outside, instead of just the immediate)
  *  - FENCE (not useful, the CPU only has a single core/thread)
  *  - ECALL (not useful, the CPU doesn't have privilege levels)
  */
@@ -26,39 +26,68 @@ module cpu(
         input UWord rom_data, output RomAddress rom_address,
         input  Word ram_data, output RamAddress ram_address, output ram_write_enable, output Word ram_write_data);
 
-    reg should_branch;
-    RomAddress pc, next_pc;
+    logic decoder_error;
     Instruction instruction;
     InstructionFlags flags;
-    logic decoder_error;
-    program_counter program_counter(clk, reset, should_branch, RomAddress'(instruction.immediate), pc, next_pc);
     instruction_decoder decoder(decoder_error, rom_data, instruction);
 
-    Word alu_src1, alu_src2, alu_out;
-    logic alu_error, alu_is_out_zero;
-    alu alu(alu_error, instruction.alu_op, alu_src1, alu_src2, alu_out, alu_is_out_zero);
+    Word cmp_src1, cmp_src2;
+    logic cmp_out;
+    alu_comparator cmp(instruction.cmp_op, cmp_src1, cmp_src2, cmp_out);
 
+    logic alu_error;
+    Word alu_src1, alu_src2, alu_out;
+    alu alu(alu_error, instruction.alu_op, alu_src1, alu_src2, alu_out);
+
+    logic reg_write_enable;
     Word reg_in, reg_out1, reg_out2;
-    register_file register_file(clk, reset,
+    register_file register_file(clk, reset, reg_write_enable,
         instruction.rd, instruction.rs1, instruction.rs2,
         reg_in, reg_out1, reg_out2);
+
+    logic should_branch;
+    RomAddress pc, next_pc;
+    program_counter program_counter(clk, reset, should_branch, RomAddress'(alu_out), pc, next_pc);
+
 
     assign rom_address = pc;
 
     assign flags = instruction.flags;
-    assign should_branch = flags.is_branch & (flags.alu_should_be_zero == alu_is_out_zero);
 
-    assign reg_in = flags.ram_read_to_rd ? ram_data :
-                    flags.next_pc_to_rd ? Word'(next_pc) :
-                    alu_out;
-    assign alu_src1 = flags.pc_to_alu_src1 ? Word'(pc) : reg_out1;
-    assign alu_src2 = flags.alu_use_imm ? Word'(instruction.immediate) : reg_out2;
+    /* should_branch */ always @ (*) case (flags.branch_condition)
+        BC_NEVER: should_branch = FALSE;
+        BC_ALWAYS: should_branch = TRUE;
+        BC_CMP_TRUE: should_branch = cmp_out;
+        BC_CMP_FALSE: should_branch = !cmp_out;
+    endcase
+
+    // always use rs1/rs2 with comparator ops
+    assign cmp_src1 = reg_out1;
+    assign cmp_src2 = reg_out2;
+
+    /* reg_in */ always @ (*) case (flags.rd_src)
+        RD_ALU:     reg_in = alu_out;
+        RD_RAM_OUT: reg_in = ram_data;
+        RD_NEXT_PC: reg_in = Word'(next_pc);
+        RD_NONE:    reg_in = alu_out; // this is handled below
+    endcase
+    assign reg_write_enable = flags.rd_src != RD_NONE;
+
+    /* alu_src1 */ always @ (*) case (flags.alu_src1)
+        ALU1_RS1:  alu_src1 = reg_out1;
+        ALU1_PC:   alu_src1 = Word'(pc);
+        ALU1_ZERO: alu_src1 = 0;
+        default: $fatal();
+    endcase
+
+    /* alu_src2 */ always @ (*) case (flags.alu_src2)
+        ALU2_RS2: alu_src2 = reg_out2;
+        ALU2_IMM: alu_src2 = instruction.immediate;
+    endcase
 
     assign ram_write_enable = flags.ram_write;
-    //                  \/ this ternary is here just to clean up the RAM debug logs, it's not necessary
-    assign ram_address = flags.ram_read_to_rd | flags.ram_write ? RamAddress'(alu_out) : 0;
-    //                     \/ same here
-    assign ram_write_data = flags.ram_write ? reg_out2 : 0;
+    assign ram_address = RamAddress'(alu_out);
+    assign ram_write_data = reg_out2;
 
     assign stop = flags.is_ebreak;
     assign error = '{decoder_error, alu_error};
@@ -88,7 +117,7 @@ module cpu_tb;
 
 
     // for unit testing, we want to avoid using ROM, so we'll use a hardcoded list of instructions
-    UWord rom_simulated[22] = '{
+    UWord rom_simulated[25] = '{
         `R_ADDI(1, 0, 10),
         `R_ADDI(1, 1, 50),
         `R_ADDI(2, 1, 5),
@@ -101,7 +130,10 @@ module cpu_tb;
         `R_ADDI(4, 3, 0),
         `R_ADDI(4, 4, 1),
         `R_SUB (5, 4, 1),
-        `R_JAL (8, 21'd8),
+        `R_JAL (8, 21'h8),
+        `R_JAL (0, 21'h10), // this should be skipped the first time
+        `R_AUIPC(12, 32'h0), // store PC to r12
+        `R_JALR(11, 12, -12'd4), // jump to r12 - 4
         `R_NOP, // this should be skipped
         `R_AND (6, 1, 2),
         `R_ADDI(7, 2, -5),

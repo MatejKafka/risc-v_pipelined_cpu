@@ -34,10 +34,9 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
         $display("RAM:");
         foreach (memory[i]) begin
             // skip (probably) unused slots
-            if (memory[i] != 0) $display("  0x%h = %0d", RamAddress'(i), memory[i]);
+            if (memory[i] != 0) $display("  0x%h = %0d", RamAddress'(i * 4), memory[i]);
         end
     endtask
-
 endmodule
 
 `ifdef TEST_ram

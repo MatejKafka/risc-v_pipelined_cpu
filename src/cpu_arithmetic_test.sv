@@ -9,15 +9,15 @@
 `include "register_file.sv"
 
 module cpu(input clk, input AluOp op, input RegAddress dst, src1, src2, input has_immediate, input Immediate imm, output Word out);
-    reg reg_reset = 0;
+    reg reg_reset = 0, reg_write_enable = 1;
     Word v1, v2;
     Word aluB;
-    logic unused_error, unused_is_out_zero;
+    logic unused_error;
 
     assign aluB = has_immediate ? Word'(imm) : v2;
 
-    register_file regs(clk, reg_reset, dst, src1, src2, out, v1, v2);
-    alu alu(unused_error, op, v1, aluB, out, unused_is_out_zero);
+    register_file regs(clk, reg_reset, reg_write_enable, dst, src1, src2, out, v1, v2);
+    alu alu(unused_error, op, v1, aluB, out);
 endmodule
 
 `ifdef TEST_cpu_arithmetic_test
@@ -30,6 +30,7 @@ module cpu_arithmetic_test_tb;
     Immediate imm;
     Word out;
     AluOp op;
+    ComparatorOp cmp_op;
     logic ebreak;
     InstructionFlags flags;
 
@@ -42,20 +43,20 @@ module cpu_arithmetic_test_tb;
 
     // setup our test instructions
     Instruction instructions[8] = '{
-        `D_IMM(ADD, 1, 0, 10),
-        `D_IMM(ADD, 1, 1, 40),
-        `D_IMM(ADD, 2, 1, 10),
-        `D_IMM(ADD, 3, 2, 1),
-        `D_IMM(ADD, 4, 3, 1),
-        `D_REG(SUB, 5, 4, 1),
-        `D_REG(AND, 6, 1, 2),
-        `D_EBREAK
+        `I_IMM(ADD, 1, 0, 10),
+        `I_IMM(ADD, 1, 1, 40),
+        `I_IMM(ADD, 2, 1, 10),
+        `I_IMM(ADD, 3, 2, 1),
+        `I_IMM(ADD, 4, 3, 1),
+        `I_REG(SUB, 5, 4, 1),
+        `I_REG(AND, 6, 1, 2),
+        `I_EBREAK
     };
 
     // simulate a primitive program counter to run the instructions defined above
     int i = 0;
-    assign {flags, op, dst, src1, src2, imm} = instructions[i];
-    assign has_immediate = flags.alu_use_imm;
+    assign {flags, op, cmp_op, imm, dst, src1, src2} = instructions[i];
+    assign has_immediate = flags.alu_src2 == ALU2_IMM;
     assign ebreak = flags.is_ebreak;
     initial clk = 0;
     always begin

@@ -5,7 +5,7 @@
 
 /** Register file with 2 read ports and 1 write port. */
 module register_file (
-        input clk, reset,
+        input clk, reset, write_enable,
         input RegAddress addr_write, addr1, addr2, input Word in,
         output Word out1, out2);
 
@@ -23,7 +23,7 @@ module register_file (
 
     always @ (posedge clk) begin
         if (reset) clear();
-        else if (addr_write != 0) begin
+        else if (write_enable && addr_write != 0) begin
             // write port
             registers[addr_write] <= in;
         end
@@ -51,12 +51,12 @@ endmodule
 
 `ifdef TEST_register_file
 module register_file_tb;
-    logic clk = 0, reset = 0;
+    logic clk = 0, reset = 0, write_enable = 1;
     RegAddress addr_write, addr1, addr2;
     Word in;
     Word out1, out2;
 
-    register_file rf(clk, reset, addr_write, addr1, addr2, in, out1, out2);
+    register_file rf(clk, reset, write_enable, addr_write, addr1, addr2, in, out1, out2);
 
     initial begin
         $dumpfile("register_file.vcd");

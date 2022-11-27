@@ -1,19 +1,18 @@
 `ifndef PACKAGE_PROGRAM_COUNTER
 `define PACKAGE_PROGRAM_COUNTER
 `include "types.svh"
+`include "instruction_types.svh"
 
 module program_counter(
         input clk, reset,
-        input should_branch, input RomAddress pc_delta,
+        input logic should_branch, input RomAddress branch_target,
         output RomAddress current_pc, output RomAddress next_pc);
     // we calculate PC + 4 here, instead of reusing the adder in the ternary below, because
     //  for JAL, we need to access next_pc outside, and if we did not compute it here, we'd
     //  have to route it through ALU
     // also, in a real CPU, we'd probably want to compute this ASAP, so that when we
     //  figure out if we should take the branch (e.g. for BEQ), we have both values ready
-    RomAddress branch_target;
     assign next_pc = current_pc + RomAddress'(`BYTES(UWord)); // +4 for 32bit UWord
-    assign branch_target = current_pc + pc_delta;
 
     always @ (posedge clk) begin
         if (reset) current_pc <= 0;
@@ -25,10 +24,10 @@ endmodule
 module program_counter_tb;
     reg clk = 1, reset = 1;
     reg should_branch;
-    RomAddress pc_delta;
+    RomAddress branch_target;
     RomAddress current_pc, unused_next_pc;
 
-    program_counter pc(clk, reset, should_branch, pc_delta, current_pc, unused_next_pc);
+    program_counter pc(clk, reset, should_branch, branch_target, current_pc, unused_next_pc);
 
     initial begin
         $dumpfile("program_counter.vcd");
@@ -41,7 +40,7 @@ module program_counter_tb;
 
     // whenever we reach "instruction" 0x10, jump back to 0x8 by setting `pc_delta` to -0x8
     assign should_branch = current_pc == 'h10;
-    assign pc_delta = should_branch ? -8 : 0;
+    assign branch_target = 'h8;
 
     always @ (posedge clk) begin
         // switch off reset at the first cycle

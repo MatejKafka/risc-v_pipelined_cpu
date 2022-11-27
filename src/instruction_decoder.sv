@@ -4,11 +4,6 @@
 `include "utils.svh"
 `include "instruction_types.svh"
 
-`define NOP_INSTRUCTION '{IF_ALU_USE_IMM, ADD, 0, 0, 0, 0}
-// invoke `ERROR and set the resulting instruction to NOP, to prevent
-//  the rest of the CPU from doing something dangerous
-`define SIGILL(display_expr) do begin `ERROR(display_expr); return `NOP_INSTRUCTION; end while (0)
-
 // Note that the instruction decoder uses fixed type sizes, unlike the rest of the project.
 module instruction_decoder(output reg error, input UWord in, output Instruction out);
     `TRACE(in or out, 32, ("🈯%s", error ? $sformatf("Invalid instruction (0x%h)", in) : Instruction_to_string(out)))
@@ -16,90 +11,124 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
     // continuously decode instructions
     assign out = decode_instruction(in);
 
+
+    // HELPER FUNCTIONS ==================================================================================================
+    /** Partial decoded instruction without the register numbers, which are extracted the same way for all instructions. */
+    typedef struct packed {
+        logic invalid_instruction;
+        AluOp alu_op;
+        ComparatorOp cmp_op;
+        Immediate immediate;
+        InstructionFlags flags;
+    } PInstruction;
+
+    function InstructionFlags flags(RdSrc rd, AluSrc1 alu1, AluSrc2 alu2,
+            logic is_ebreak = 0, ram_write = 0, BranchCondition branch_cond = BC_NEVER);
+        return '{is_ebreak, ram_write, branch_cond, rd, alu1, alu2};
+    endfunction
+
+    function PInstruction parsed(AluOp op, Immediate imm, InstructionFlags flags_, ComparatorOp cmp_op = C_NONE, logic invalid = 0);
+        return '{invalid, op, cmp_op, imm, flags_};
+    endfunction
+
+    // invoke `ERROR and set the resulting instruction to NOP, to prevent
+    //  the rest of the CPU from doing something dangerous
+    `define SIGILL(display_expr) do begin `ERROR(display_expr); return parsed(ADD, 0, 0, .invalid(TRUE)); end while (0)
+    // END HELPER FUNCTIONS ==============================================================================================
+
+
     // read the opcode, call the corresponding function to handle that type of instructions
     // since not all opcodes have a standard name, some of the names are made up (like IA = "immediate arithmetic")
     function Instruction decode_instruction(UWord i);
+        automatic PInstruction pi;
         error = 0;
         case (i[6:0])
-            'b0110111: return decode_LUI(i[31:                             12], i[11:7]);
-            'b0010111: return decode_AUIPC(i[31:                           12], i[11:7]);
-            'b1101111: return decode_J (i[31:                              12], i[11:7]);
-            'b1100011: return decode_B (i[31:25], i[24:20], i[19:15], i[14:12], i[11:7]);
-            'b0100011: return decode_S (i[31:25], i[24:20], i[19:15], i[14:12], i[11:7]);
-            'b0000011: return decode_IL(i[31:          20], i[19:15], i[14:12], i[11:7]);
-            'b0010011: return decode_IA(i[31:          20], i[19:15], i[14:12], i[11:7]);
-            'b0110011: return decode_R (i[31:25], i[24:20], i[19:15], i[14:12], i[11:7]);
-            'b1110011: return decode_E (i[31:          20], i[19:                    7]);
-            default: `SIGILL(("Invalid/unsupported instruction."));
+            'b0110111: pi = decode_LUI(i[31:12]);
+            'b0010111: pi = decode_AUIPC(i[31:12]);
+            'b1101111: pi = decode_JAL(i[31:12]);
+            'b1100111: pi = decode_JALR(i[31:        20], i[14:12]);
+
+            'b1100011: pi = decode_B (i[31:25],           i[14:12], i[11:7]);
+            'b0100011: pi = decode_S (i[31:25],           i[14:12], i[11:7]);
+            'b0000011: pi = decode_IL(i[31:          20], i[14:12]);
+            'b0010011: pi = decode_IA(i[31:          20], i[14:12]);
+            'b0110011: pi = decode_R (i[31:25],           i[14:12]);
+            'b1110011: pi = decode_E (i[31:          20], i[19:          7]);
+
+            'b0001111: begin `ERROR(("FENCE is not supported.")); return I_NOP; end
+            default: begin `ERROR(("Invalid/unsupported instruction.")); return I_NOP; end
         endcase
+
+        if (pi.invalid_instruction) return I_NOP;
+        // registers are wired directly, and we use flags to define whether to use them or not
+        return '{flags: pi.flags, alu_op: pi.alu_op, cmp_op: pi.cmp_op, immediate: pi.immediate,
+                rs2: i[24:20], rs1: i[19:15], rd: i[11:7]};
     endfunction
 
 
     // LUI = load upper immediate (effectively, an `ADDI rd, 0, imm`, with large, shifted immediate)
-    function Instruction decode_LUI(logic [19:0] imm, RegAddress rd);
+    function PInstruction decode_LUI(logic [19:0] imm);
         // no Immediate' cast here, we need to match the size exactly
-        return '{IF_ALU_USE_IMM, XOR, rd, 0, 0, {imm, 12'b0}};
+        return parsed(XOR, {imm, 12'b0}, flags(RD_ALU, ALU1_ZERO, ALU2_IMM));
     endfunction
 
 
     // AUIPC
-    function Instruction decode_AUIPC(logic [19:0] imm, RegAddress rd);
+    function PInstruction decode_AUIPC(logic [19:0] imm);
         // no Immediate' cast here, we need to match the Immediate size exactly because of the shift
-        return '{IF_ALU_USE_IMM | IF_PC_TO_ALU_SRC1, ADD, rd, 0, 0, {imm, 12'b0}};
+        return parsed(ADD, {imm, 12'b0}, flags(RD_ALU, ALU1_PC, ALU2_IMM));
     endfunction
 
 
-    // J-type instruction(s) (JAL)
-    function Instruction decode_J(logic [19:0] shuffled_imm, RegAddress rd);
+    // JAL
+    function PInstruction decode_JAL(logic [19:0] shuffled_imm);
         automatic Immediate imm = Immediate'($signed({shuffled_imm[19], shuffled_imm[7:0], shuffled_imm[8], shuffled_imm[18:9], 1'b0}));
-        // we set alu_op to ADD so that IF_ALU_SHOULD_BE_ZERO is fulfilled and the jump is taken
-        return '{IF_IS_BRANCH | IF_NEXT_PC_TO_RD | IF_ALU_SHOULD_BE_ZERO, ADD, rd, 0, 0, imm}; // JAL
+        return parsed(ADD, imm, flags(RD_NEXT_PC, ALU1_PC, ALU2_IMM, .branch_cond(BC_ALWAYS)));
+    endfunction
+
+
+    // JALR
+    function PInstruction decode_JALR(logic [11:0] imm, logic [2:0] funct3);
+        if (funct3 != 'b000) `SIGILL(("Invalid/unsupported J instruction, unknown 'funct3' value: 0b%b", funct3));
+        return parsed(ADD, Immediate'($signed(imm)), flags(RD_NEXT_PC, ALU1_RS1, ALU2_IMM, .branch_cond(BC_ALWAYS)));
     endfunction
 
 
     // B-type instructions (branches - BEQ, BNE,...)
-    function Instruction decode_B(logic [6:0] imm7, RegAddress rs2, rs1, logic [2:0] funct3, logic [4:0] imm5);
+    function PInstruction decode_B(logic [6:0] imm7, logic [2:0] funct3, logic [4:0] imm5);
         automatic Immediate imm = Immediate'($signed({imm7[6], imm5[0], imm7[5:0], imm5[4:1], 1'b0}));
-        automatic AluOp op;
-        automatic logic expected_alu_zero = 0;
-        casez (funct3)
-            'b00?: begin op = SUB;  expected_alu_zero = !funct3[0]; end // BEQ/BNE
-            'b10?: begin op = SLT;  expected_alu_zero =  funct3[0]; end // BLT/BGE
-            'b11?: begin op = SLTU; expected_alu_zero =  funct3[0]; end // BLTU/BGEU
-            'b01?: `SIGILL(("Invalid/unsupported B instruction, unknown 'funct3' value: %0b", funct3));
-        endcase
-        // set `rd` to r0 to ignore the write
-        return '{IF_IS_BRANCH | (expected_alu_zero ? IF_ALU_SHOULD_BE_ZERO : IF_NONE), op, '0, rs1, rs2, imm};
+        if (funct3[2:1] == 'b01) `SIGILL(("Invalid/unsupported B instruction, unknown 'funct3' value: 0b%b", funct3));
+        // ComparatorOps are encoded the same way as in the instruction, so we just pass the relevant bits
+        return parsed(ADD, imm, flags(RD_NONE, ALU1_PC, ALU2_IMM, .branch_cond(funct3[0] ? BC_CMP_FALSE : BC_CMP_TRUE)),
+                .cmp_op(ComparatorOp'(funct3[2:1])));
     endfunction
 
+
     // S-type instructions - memory writes (SW)
-    function Instruction decode_S(logic [6:0] imm7, RegAddress rs2, rs1, logic [2:0] funct3, logic [4:0] imm5);
-        automatic Immediate imm = Immediate'($signed({imm7, imm5}));
-        if (funct3 != 'b010) `SIGILL(("Invalid/unsupported S instruction, unknown 'funct3' value: %0b", funct3));
-        return '{IF_ALU_USE_IMM | IF_RAM_WRITE, ADD, 0, rs1, rs2, imm};
+    function PInstruction decode_S(logic [6:0] imm7, logic [2:0] funct3, logic [4:0] imm5);
+        if (funct3 != 'b010) `SIGILL(("Invalid/unsupported S instruction, unknown 'funct3' value: 0b%b", funct3));
+        return parsed(ADD, Immediate'($signed({imm7, imm5})), flags(RD_NONE, ALU1_RS1, ALU2_IMM, .ram_write(TRUE)));
     endfunction
 
 
     // Immediate Load instructions - memory read (LW)
-    function Instruction decode_IL(logic [11:0] imm, RegAddress rs1, logic [2:0] funct3, RegAddress rd);
-        if (funct3 != 'b010) `SIGILL(("Invalid/unsupported IL instruction, unknown 'funct3' value: %0b", funct3));
-        return '{IF_ALU_USE_IMM | IF_RAM_READ_TO_RD, ADD, rd, rs1, 0, Immediate'($signed(imm))};
+    function PInstruction decode_IL(logic [11:0] imm, logic [2:0] funct3);
+        if (funct3 != 'b010) `SIGILL(("Invalid/unsupported IL instruction, unknown 'funct3' value: 0b%b", funct3));
+        return parsed(ADD, Immediate'($signed(imm)), flags(RD_RAM_OUT, ALU1_RS1, ALU2_IMM));
     endfunction
 
 
     // R-type instructions (register-to-register)
-    function Instruction decode_R(logic [6:0] funct7, RegAddress rs2, rs1, logic [2:0] funct3, RegAddress rd);
-        // AluOps are encoded the same way as in the instruction, so we just combine the relevant bits
-        automatic AluOp op = AluOp'({funct7[5], funct3});
-        // validate the instruction
+    function PInstruction decode_R(logic [6:0] funct7, logic [2:0] funct3);
         if ({funct7[6], funct7[4:0]} != 0) `SIGILL(("Invalid/unsupported R instruction, unknown 'funct7' value."));
         if (funct7[5] && funct3 != 3'b000 && funct3 != 3'b101) `SIGILL(("Invalid/unsupported R instruction, unknown 'funct7'/'funct3' value combination."));
-        return '{IF_NONE, op, rd, rs1, rs2, '0};
+        // AluOps are encoded the same way as in the instruction, so we just combine the relevant bits
+        return parsed(AluOp'({funct7[5], funct3}), '0, flags(RD_ALU, ALU1_RS1, ALU2_RS2));
     endfunction
 
 
     // Immediate Arithmetic instructions
-    function Instruction decode_IA(logic [11:0] imm, RegAddress rs1, logic [2:0] funct3, RegAddress rd);
+    function PInstruction decode_IA(logic [11:0] imm, logic [2:0] funct3);
         automatic AluOp op;
         automatic Immediate imm_resolved;
 
@@ -117,16 +146,17 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
             op = AluOp'({1'b0, funct3});
             imm_resolved = Immediate'($signed(imm));
         end
-        return '{IF_ALU_USE_IMM, op, rd, rs1, '0, imm_resolved};
+
+        return parsed(op, imm_resolved, flags(RD_ALU, ALU1_RS1, ALU2_IMM));
     endfunction
 
 
     /* EBREAK & ECALL */
-    function Instruction decode_E(logic [11:0] type_, logic [12:0] zeros);
+    function PInstruction decode_E(logic [11:0] type_, logic [12:0] zeros);
         if (zeros != 0) `SIGILL(("Invalid/unsupported E instruction."));
         case (type_)
-            12'b000000000000: `SIGILL(("ECALL not supported."));
-            12'b000000000001: return '{flags: IF_IS_EBREAK, alu_op: AluOp'(0), default: '0};
+            12'b000000000000: `SIGILL(("ECALL is not supported."));
+            12'b000000000001: return parsed(ADD, 0, flags(RD_NONE, ALU1_RS1, ALU2_IMM, .is_ebreak(TRUE)));
             default: `SIGILL(("Invalid/unsupported E instruction."));
         endcase
     endfunction

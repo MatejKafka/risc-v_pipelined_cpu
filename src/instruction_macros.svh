@@ -18,6 +18,7 @@
 `define R_AND(RD, RS1, RS2) {7'b0000000, 5'(RS2), 5'(RS1), 3'b111, 5'(RD), 7'b0110011}
 
 `define R_JAL(RD, IMM) {{21'(IMM)}[20], {21'(IMM)}[10:1], {21'(IMM)}[11], {21'(IMM)}[19:12], 5'(RD), 7'b1101111}
+`define R_JALR(RD, RS1, IMM) {12'(IMM), 5'(RS1), 3'b000, 5'(RD), 7'b1100111}
 `define R_BRANCH(FUNCT3, RS1, RS2, IMM) { \
         {13'(IMM)}[12], {13'(IMM)}[10:5], 5'(RS2), 5'(RS1), 3'(FUNCT3), \
         {13'(IMM)}[4:1], {13'(IMM)}[11], 7'b1100011}
@@ -34,10 +35,10 @@
 
 
 // macros to create parsed instructions directly
-`define D_REG(OP, RD, RS1, RS2) Instruction'{IF_NONE,        OP, RD, RS1, RS2, 0}
-`define D_IMM(OP, RD, RS1, IMM) Instruction'{IF_ALU_USE_IMM, OP, RD, RS1, 0, IMM}
-`define D_NOP `D_IMM(ADD, 0, 0, 0)
-`define D_EBREAK                Instruction'{IF_IS_EBREAK, AluOp'(0), 0, 0, 0, 0}
+`define I_REG(OP, RD, RS1, RS2) Instruction'{'{0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_RS2}, OP, C_NONE, 0, RD, RS1, RS2}
+`define I_IMM(OP, RD, RS1, IMM) Instruction'{'{0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_IMM}, OP, C_NONE, IMM, RD, RS1, 0}
+`define I_NOP I_NOP
+`define I_EBREAK                Instruction'{'{1, 0, BC_NEVER, RD_NONE, ALU1_RS1, ALU2_IMM}, ADD, C_NONE, 0, 0, 0, 0}
 
 
 `endif

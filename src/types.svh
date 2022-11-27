@@ -25,31 +25,49 @@ typedef logic [15:0] RomAddress;
 // the ALU op numbers correspond to their RV encoding {funct7[5], funct3} to simplify decoding
 // if this is changed, the RV decoder must be changed accordingly
 typedef enum logic [3:0] {
-    ADD  = 4'b0_000, // addition
-    SUB  = 4'b1_000, // subtraction
-    SLL  = 4'b0_001, // shift left logical
-    SLT  = 4'b0_010, // set less-than
-    SLTU = 4'b0_011, // set less-than unsigned
-    XOR  = 4'b0_100,
-    SRL  = 4'b0_101, // shift right logical
-    SRA  = 4'b1_101, // shift right arithmetic
-    OR   = 4'b0_110,
-    AND  = 4'b0_111
+    ADD  = 'b0_000, // addition
+    SUB  = 'b1_000, // subtraction
+    SLL  = 'b0_001, // shift left logical
+    SLT  = 'b0_010, // set less-than
+    SLTU = 'b0_011, // set less-than unsigned
+    XOR  = 'b0_100,
+    SRL  = 'b0_101, // shift right logical
+    SRA  = 'b1_101, // shift right arithmetic
+    OR   = 'b0_110,
+    AND  = 'b0_111
 } AluOp;
+
+// these op numbers also correspond to B-format funct3 values
+typedef enum logic [1:0] {
+    C_EQ   = 'b00,
+    C_LT   = 'b10,
+    C_LTU  = 'b11,
+    C_NONE = 'b01 // any op is ok, the result is not relevant
+} ComparatorOp;
+
 
 function string AluOp_symbol(AluOp op);
     case (op)
-        ADD: AluOp_symbol = "+";
-        SUB: AluOp_symbol = "-";
-        SLL: AluOp_symbol = "<<";
-        SLT: AluOp_symbol = "<s";
-        SLTU:AluOp_symbol = "<u";
-        XOR: AluOp_symbol = "^";
-        SRL: AluOp_symbol = ">>";
-        SRA: AluOp_symbol = ">>>";
-        OR:  AluOp_symbol = "|";
-        AND: AluOp_symbol = "&";
-        default: AluOp_symbol = "INVALID ALU OPERATION";
+        ADD:  return "+";
+        SUB:  return "-";
+        SLL:  return "<<";
+        SLT:  return "<s";
+        SLTU: return "<u";
+        XOR:  return "^";
+        SRL:  return ">>";
+        SRA:  return ">>>";
+        OR:   return "|";
+        AND:  return "&";
+        default: return "INVALID ALU OPERATION";
+    endcase
+endfunction
+
+function string ComparatorOp_name(ComparatorOp op);
+    case (op)
+        C_EQ:  return "==";
+        C_LT:  return "<s";
+        C_LTU: return "<u";
+        C_NONE: return "COMPARATOR IDLE";
     endcase
 endfunction
 
