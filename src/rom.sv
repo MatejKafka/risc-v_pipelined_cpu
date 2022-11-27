@@ -12,8 +12,16 @@ module rom(input RomAddress address, output UWord out);
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
 
-    // load up `gcd.memh` to the ROM
-    initial $readmemh("../risc-v_programs/gcd.memh", memory);
+    // load up the program passed in the `+ROM_PATH=<path>` simulator argument to the ROM
+    initial begin
+        string rom_path;
+        int fd;
+        if ($value$plusargs("ROM_PATH=%s", rom_path)) begin
+            $readmemh(rom_path, memory);
+        end else begin
+            `PANIC("Missing 'ROM_PATH' argument, a path to the ROM content in .memh format must be provided.");
+        end
+    end
 
     // initial begin
     //    fd = $fopen(rom_path, "rb");
