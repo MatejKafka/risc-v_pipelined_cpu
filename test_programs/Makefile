@@ -1,19 +1,37 @@
 .PHONY: all dump clean
 .PRECIOUS: %.memh %.bin
 
-TOOLCHAIN := riscv64-unknown-elf
-# compilation works correctly with clang, but we need binutils for riscv64 to manipulate the compiled binary
-#CC := clang -target riscv32-freestanding-none
-CC := $(TOOLCHAIN)-gcc
-OBJDUMP := $(TOOLCHAIN)-objdump
-OBJCOPY := $(TOOLCHAIN)-objcopy
+ARCH := riscv64-unknown-elf
 
-CPU_RUNNER := ../run.sh
+ifeq ($(C), zig)
+CC := zig cc -target riscv32-freestanding-none
+else ifeq ($(C), clang)
+CC := clang -target riscv32-freestanding-none
+else
+CC := $(ARCH)-gcc # default = GCC
+endif
+
+OBJDUMP := $(ARCH)-objdump
+OBJCOPY := $(ARCH)-objcopy
+
+
+ifneq ($(filter zig zig.exe, $(firstword $(CC))),)
+# zig cc
+CFLAGS += -march=generic_rv32
+else
+# gcc/clang
+CFLAGS += -march=rv32i -mabi=ilp32 -lgcc
+endif
+
+ifeq ($(firstword $(CC)), clang)
+# clang wouldn't find libgcc.a without adding this link directory
+CFLAGS += -L /lib/gcc/$(ARCH)/*/rv32i/ilp32
+endif
+
 
 CFLAGS += -O2 -fno-delete-null-pointer-checks
 # no need for -fpie, we place .text to a static address in linker.ld
 CFLAGS += -static -nostdinc -nostdlib -ffreestanding
-CFLAGS += -march=rv32i -mabi=ilp32
 # -ffunction-sections = write each function into a separate section to allow us to manipulate their order in linker.ld
 CFLAGS += -ffunction-sections -T linker.ld
 CFLAGS += $(EXTRA_CFLAGS)

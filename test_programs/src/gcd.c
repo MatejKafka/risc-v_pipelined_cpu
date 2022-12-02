@@ -54,6 +54,16 @@ unsigned int gcd_recursive(unsigned int a, unsigned int b) {
     }
 }
 
+unsigned int gcd_mod(unsigned int a, unsigned int b) {
+    int r;
+    while (a % b > 0) {
+        r = a % b;
+        a = b;
+        b = r;
+    }
+    return b;
+}
+
 int main() {
     volatile unsigned int *result_ptr = (void *)0x0;
     volatile unsigned int *a_ptr = (void *)0x4;
@@ -62,7 +72,7 @@ int main() {
     *a_ptr = GCD_A;
     *b_ptr = GCD_B;
 
-    *result_ptr = gcd_recursive(*a_ptr, *b_ptr);
+    *result_ptr = gcd_mod(*a_ptr, *b_ptr);
     return 0;
 }
 
