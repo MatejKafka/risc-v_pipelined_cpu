@@ -35,10 +35,10 @@
 
 
 // macros to create parsed instructions directly
-`define I_REG(OP, RD, RS1, RS2) Instruction'{'{0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_RS2}, OP, C_NONE, 0, RD, RS1, RS2}
-`define I_IMM(OP, RD, RS1, IMM) Instruction'{'{0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_IMM}, OP, C_NONE, IMM, RD, RS1, 0}
+`define I_REG(OP, RD, RS1, RS2) Instruction'{'{OP, C_NONE, 0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_RS2}, 0, RD, RS1, RS2}
+`define I_IMM(OP, RD, RS1, IMM) Instruction'{'{OP, C_NONE, 0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_IMM}, IMM, RD, RS1, 0}
 `define I_NOP I_NOP
-`define I_EBREAK                Instruction'{'{1, 0, BC_NEVER, RD_NONE, ALU1_RS1, ALU2_IMM}, ADD, C_NONE, 0, 0, 0, 0}
+`define I_EBREAK                Instruction'{'{ADD, C_NONE, 1, 0, BC_NEVER, RD_NONE, ALU1_RS1, ALU2_IMM}, 0, 0, 0, 0}
 
 
 `endif

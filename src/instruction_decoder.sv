@@ -16,24 +16,23 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
     /** Partial decoded instruction without the register numbers, which are extracted the same way for all instructions. */
     typedef struct packed {
         logic invalid_instruction;
-        AluOp alu_op;
-        ComparatorOp cmp_op;
         Immediate immediate;
-        InstructionFlags flags;
+        InstructionControl control;
     } PInstruction;
 
-    function InstructionFlags flags(RdSrc rd, AluSrc1 alu1, AluSrc2 alu2,
-            logic is_ebreak = 0, ram_write = 0, BranchCondition branch_cond = BC_NEVER);
-        return '{is_ebreak, ram_write, branch_cond, rd, alu1, alu2};
+    function PInstruction parsed(AluOp op, Immediate imm, RdSrc rd, AluSrc1 alu1, AluSrc2 alu2,
+            logic is_ebreak = 0, ram_write = 0, BranchCondition branch_cond = BC_NEVER,
+            ComparatorOp cmp_op = C_NONE, logic invalid=0);
+        return '{invalid, imm, '{op, cmp_op, is_ebreak, ram_write, branch_cond, rd, alu1, alu2}};
     endfunction
 
-    function PInstruction parsed(AluOp op, Immediate imm, InstructionFlags flags_, ComparatorOp cmp_op = C_NONE, logic invalid = 0);
-        return '{invalid, op, cmp_op, imm, flags_};
-    endfunction
 
     // invoke `ERROR and set the resulting instruction to NOP, to prevent
     //  the rest of the CPU from doing something dangerous
-    `define SIGILL(display_expr) do begin `ERROR(display_expr); return parsed(ADD, 0, 0, .invalid(TRUE)); end while (0)
+    `define SIGILL(display_expr) do begin \
+            `ERROR(display_expr); \
+            return parsed(ADD, 0, RdSrc'(0), AluSrc1'(0), AluSrc2'(0), .invalid(TRUE)); \
+        end while (0)
     // END HELPER FUNCTIONS ==============================================================================================
 
 
@@ -61,36 +60,35 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
 
         if (pi.invalid_instruction) return I_NOP;
         // registers are wired directly, and we use flags to define whether to use them or not
-        return '{flags: pi.flags, alu_op: pi.alu_op, cmp_op: pi.cmp_op, immediate: pi.immediate,
-                rs2: i[24:20], rs1: i[19:15], rd: i[11:7]};
+        return '{control: pi.control, immediate: pi.immediate, rs2: i[24:20], rs1: i[19:15], rd: i[11:7]};
     endfunction
 
 
     // LUI = load upper immediate (effectively, an `ADDI rd, 0, imm`, with large, shifted immediate)
     function PInstruction decode_LUI(logic [19:0] imm);
         // no Immediate' cast here, we need to match the size exactly
-        return parsed(XOR, {imm, 12'b0}, flags(RD_ALU, ALU1_ZERO, ALU2_IMM));
+        return parsed(XOR, {imm, 12'b0}, RD_ALU, ALU1_ZERO, ALU2_IMM);
     endfunction
 
 
     // AUIPC
     function PInstruction decode_AUIPC(logic [19:0] imm);
         // no Immediate' cast here, we need to match the Immediate size exactly because of the shift
-        return parsed(ADD, {imm, 12'b0}, flags(RD_ALU, ALU1_PC, ALU2_IMM));
+        return parsed(ADD, {imm, 12'b0}, RD_ALU, ALU1_PC, ALU2_IMM);
     endfunction
 
 
     // JAL
     function PInstruction decode_JAL(logic [19:0] shuffled_imm);
         automatic Immediate imm = Immediate'($signed({shuffled_imm[19], shuffled_imm[7:0], shuffled_imm[8], shuffled_imm[18:9], 1'b0}));
-        return parsed(ADD, imm, flags(RD_NEXT_PC, ALU1_PC, ALU2_IMM, .branch_cond(BC_ALWAYS)));
+        return parsed(ADD, imm, RD_NEXT_PC, ALU1_PC, ALU2_IMM, .branch_cond(BC_ALWAYS));
     endfunction
 
 
     // JALR
     function PInstruction decode_JALR(logic [11:0] imm, logic [2:0] funct3);
         if (funct3 != 'b000) `SIGILL(("Invalid/unsupported J instruction, unknown 'funct3' value: 0b%b", funct3));
-        return parsed(ADD, Immediate'($signed(imm)), flags(RD_NEXT_PC, ALU1_RS1, ALU2_IMM, .branch_cond(BC_ALWAYS)));
+        return parsed(ADD, Immediate'($signed(imm)), RD_NEXT_PC, ALU1_RS1, ALU2_IMM, .branch_cond(BC_ALWAYS));
     endfunction
 
 
@@ -99,7 +97,7 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
         automatic Immediate imm = Immediate'($signed({imm7[6], imm5[0], imm7[5:0], imm5[4:1], 1'b0}));
         if (funct3[2:1] == 'b01) `SIGILL(("Invalid/unsupported B instruction, unknown 'funct3' value: 0b%b", funct3));
         // ComparatorOps are encoded the same way as in the instruction, so we just pass the relevant bits
-        return parsed(ADD, imm, flags(RD_NONE, ALU1_PC, ALU2_IMM, .branch_cond(funct3[0] ? BC_CMP_FALSE : BC_CMP_TRUE)),
+        return parsed(ADD, imm, RD_NONE, ALU1_PC, ALU2_IMM, .branch_cond(funct3[0] ? BC_CMP_FALSE : BC_CMP_TRUE),
                 .cmp_op(ComparatorOp'(funct3[2:1])));
     endfunction
 
@@ -107,14 +105,14 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
     // S-type instructions - memory writes (SW)
     function PInstruction decode_S(logic [6:0] imm7, logic [2:0] funct3, logic [4:0] imm5);
         if (funct3 != 'b010) `SIGILL(("Invalid/unsupported S instruction, unknown 'funct3' value: 0b%b", funct3));
-        return parsed(ADD, Immediate'($signed({imm7, imm5})), flags(RD_NONE, ALU1_RS1, ALU2_IMM, .ram_write(TRUE)));
+        return parsed(ADD, Immediate'($signed({imm7, imm5})), RD_NONE, ALU1_RS1, ALU2_IMM, .ram_write(TRUE));
     endfunction
 
 
     // Immediate Load instructions - memory read (LW)
     function PInstruction decode_IL(logic [11:0] imm, logic [2:0] funct3);
         if (funct3 != 'b010) `SIGILL(("Invalid/unsupported IL instruction, unknown 'funct3' value: 0b%b", funct3));
-        return parsed(ADD, Immediate'($signed(imm)), flags(RD_RAM_OUT, ALU1_RS1, ALU2_IMM));
+        return parsed(ADD, Immediate'($signed(imm)), RD_RAM_OUT, ALU1_RS1, ALU2_IMM);
     endfunction
 
 
@@ -123,7 +121,7 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
         if ({funct7[6], funct7[4:0]} != 0) `SIGILL(("Invalid/unsupported R instruction, unknown 'funct7' value."));
         if (funct7[5] && funct3 != 3'b000 && funct3 != 3'b101) `SIGILL(("Invalid/unsupported R instruction, unknown 'funct7'/'funct3' value combination."));
         // AluOps are encoded the same way as in the instruction, so we just combine the relevant bits
-        return parsed(AluOp'({funct7[5], funct3}), '0, flags(RD_ALU, ALU1_RS1, ALU2_RS2));
+        return parsed(AluOp'({funct7[5], funct3}), '0, RD_ALU, ALU1_RS1, ALU2_RS2);
     endfunction
 
 
@@ -147,7 +145,7 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
             imm_resolved = Immediate'($signed(imm));
         end
 
-        return parsed(op, imm_resolved, flags(RD_ALU, ALU1_RS1, ALU2_IMM));
+        return parsed(op, imm_resolved, RD_ALU, ALU1_RS1, ALU2_IMM);
     endfunction
 
 
@@ -156,7 +154,7 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
         if (zeros != 0) `SIGILL(("Invalid/unsupported E instruction."));
         case (type_)
             12'b000000000000: `SIGILL(("ECALL is not supported."));
-            12'b000000000001: return parsed(ADD, 0, flags(RD_NONE, ALU1_RS1, ALU2_IMM, .is_ebreak(TRUE)));
+            12'b000000000001: return parsed(ADD, 0, RD_NONE, ALU1_RS1, ALU2_IMM, .is_ebreak(TRUE));
             default: `SIGILL(("Invalid/unsupported E instruction."));
         endcase
     endfunction

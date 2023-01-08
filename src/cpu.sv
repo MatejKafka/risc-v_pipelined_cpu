@@ -28,16 +28,16 @@ module cpu(
 
     logic decoder_error;
     Instruction instruction;
-    InstructionFlags flags;
+    InstructionControl control;
     instruction_decoder decoder(decoder_error, rom_data, instruction);
 
     Word cmp_src1, cmp_src2;
     logic cmp_out;
-    alu_comparator cmp(instruction.cmp_op, cmp_src1, cmp_src2, cmp_out);
+    alu_comparator cmp(control.cmp_op, cmp_src1, cmp_src2, cmp_out);
 
     logic alu_error;
     Word alu_src1, alu_src2, alu_out;
-    alu alu(alu_error, instruction.alu_op, alu_src1, alu_src2, alu_out);
+    alu alu(alu_error, control.alu_op, alu_src1, alu_src2, alu_out);
 
     logic reg_write_enable;
     Word reg_in, reg_out1, reg_out2;
@@ -52,9 +52,9 @@ module cpu(
 
     assign rom_address = pc;
 
-    assign flags = instruction.flags;
+    assign control = instruction.control;
 
-    /* should_branch */ always @ (*) case (flags.branch_condition)
+    /* should_branch */ always @ (*) case (control.branch_condition)
         BC_NEVER: should_branch = FALSE;
         BC_ALWAYS: should_branch = TRUE;
         BC_CMP_TRUE: should_branch = cmp_out;
@@ -65,31 +65,31 @@ module cpu(
     assign cmp_src1 = reg_out1;
     assign cmp_src2 = reg_out2;
 
-    /* reg_in */ always @ (*) case (flags.rd_src)
+    /* reg_in */ always @ (*) case (control.rd_src)
         RD_ALU:     reg_in = alu_out;
         RD_RAM_OUT: reg_in = ram_data;
         RD_NEXT_PC: reg_in = Word'(next_pc);
         RD_NONE:    reg_in = alu_out; // this is handled below
     endcase
-    assign reg_write_enable = flags.rd_src != RD_NONE;
+    assign reg_write_enable = control.rd_src != RD_NONE;
 
-    /* alu_src1 */ always @ (*) case (flags.alu_src1)
+    /* alu_src1 */ always @ (*) case (control.alu_src1)
         ALU1_RS1:  alu_src1 = reg_out1;
         ALU1_PC:   alu_src1 = Word'(pc);
         ALU1_ZERO: alu_src1 = 0;
         default: $fatal();
     endcase
 
-    /* alu_src2 */ always @ (*) case (flags.alu_src2)
+    /* alu_src2 */ always @ (*) case (control.alu_src2)
         ALU2_RS2: alu_src2 = reg_out2;
         ALU2_IMM: alu_src2 = instruction.immediate;
     endcase
 
-    assign ram_write_enable = flags.ram_write;
+    assign ram_write_enable = control.ram_write;
     assign ram_address = RamAddress'(alu_out);
     assign ram_write_data = reg_out2;
 
-    assign stop = flags.is_ebreak;
+    assign stop = control.is_ebreak;
     assign error = '{decoder_error, alu_error};
 endmodule
 

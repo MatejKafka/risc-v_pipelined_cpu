@@ -29,12 +29,10 @@ module cpu_arithmetic_test_tb;
     logic has_immediate;
     Immediate imm;
     Word out;
-    AluOp op;
-    ComparatorOp cmp_op;
     logic ebreak;
-    InstructionFlags flags;
+    InstructionControl control;
 
-    cpu cpu(clk, op, dst, src1, src2, has_immediate, imm, out);
+    cpu cpu(clk, control.alu_op, dst, src1, src2, has_immediate, imm, out);
 
     initial begin
         $dumpfile("cpu_arithmetic_test.vcd");
@@ -55,9 +53,9 @@ module cpu_arithmetic_test_tb;
 
     // simulate a primitive program counter to run the instructions defined above
     int i = 0;
-    assign {flags, op, cmp_op, imm, dst, src1, src2} = instructions[i];
-    assign has_immediate = flags.alu_src2 == ALU2_IMM;
-    assign ebreak = flags.is_ebreak;
+    assign {control, imm, dst, src1, src2} = instructions[i];
+    assign has_immediate = control.alu_src2 == ALU2_IMM;
+    assign ebreak = control.is_ebreak;
     initial clk = 0;
     always begin
         #5 clk <= 0;

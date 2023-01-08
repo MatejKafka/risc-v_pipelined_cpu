@@ -1,4 +1,4 @@
-.PHONY: all dump run test decode trace clean
+.PHONY: all dump run test decode trace clean FORCE_REBUILD
 
 PROGRAM_MEMH = test_programs/build/gcd.memh
 
@@ -21,6 +21,7 @@ decode: $(PROGRAM_MEMH)
 
 # prints all instructions as they're decoded, followed by a memory (RAM) dump
 trace: $(PROGRAM_MEMH)
+	@mkdir -p build
 	./run.sh main $< -d 2>&1 1>build/TMP.dbg_output.txt \
 		| grep -E "🈯|📁i" \
 		| sed -nE 'N; s/📁i address=(0x[0-9a-f]+) out=0x[0-9a-f]+....\n(.......)🈯/\1: \2/p; D'
@@ -29,8 +30,8 @@ trace: $(PROGRAM_MEMH)
 		| head -n -1
 	@rm build/TMP.dbg_output.txt
 
-test_programs/%:
-	$(MAKE) $* --directory test_programs
+test_programs/%: FORCE_REBUILD
+	@$(MAKE) $* --directory test_programs --no-print-directory
 
 clean:
 	$(MAKE) clean --directory test_programs
