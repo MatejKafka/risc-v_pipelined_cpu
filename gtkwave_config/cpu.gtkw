@@ -29,7 +29,6 @@ cpu_tb.clk
 -
 @28
 cpu_tb.cpu.should_branch
-cpu_tb.cpu.flags[6:0]
 @200
 -
 @22

@@ -3,7 +3,8 @@
 `include "types.svh"
 `include "utils.svh"
 
-module ram(input clk, reset, write_enable, input RamAddress address, input Word in, output Word out);
+module ram #(parameter USE_FORWARDING=0) (
+        input clk, reset, write_enable, input RamAddress address, input Word in, output Word out);
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
@@ -11,8 +12,8 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
     `TRACE(write_enable or address or in or out, 33, ("📁d we=%0d address=0x%h in=%0d out=%0d", write_enable, address, in, out))
     /* verilator lint_on SYNCASYNCNET */
 
-    // read port
-    assign out = memory[`WORD_ADDRESS(address)];
+    // read port, with forwarding
+    assign out = USE_FORWARDING && write_enable ? in : memory[`WORD_ADDRESS(address)];
 
     always @ (posedge clk) begin
         if (reset) clear();
@@ -21,7 +22,7 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
     end
 
     task clear();
-        // we cannot use <=, verilator will complain that it do non-blocking assignment in loops longer than 256;
+        // we cannot use <=, verilator will complain that it cannot do non-blocking assignment in loops longer than 256;
         //  I hope using blocking assignment here shouldn't cause too much trouble with timing
         /* verilator lint_off BLKSEQ */
         foreach (memory[i]) begin

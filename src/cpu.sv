@@ -99,7 +99,7 @@ endmodule
 module cpu_tb;
     reg clk, reset;
     logic error_enabled;
-    logic stop;
+    logic stop, masked_stop;
     CpuError error;
 
     RomAddress rom_address;
@@ -154,6 +154,8 @@ module cpu_tb;
         $dumpvars(0, cpu_tb);
     end
 
+    assign masked_stop = stop & !reset;
+
     initial clk = 0;
     initial reset = 1;
     initial error_enabled = FALSE;
@@ -165,12 +167,12 @@ module cpu_tb;
         error_enabled <= TRUE;
     end
     always begin
-            #5 clk <= 0;
-            // prevent clock pulse when the CPU signals a stop
-            #5 clk <= !stop;
+        #5 clk <= 0;
+        // prevent clock pulse when the CPU signals a stop
+        #5 clk <= !masked_stop;
     end
 
-    always @ (posedge stop) begin
+    always @ (posedge masked_stop) begin
         #10; // delay to let the last register write finish
         cpu.register_file.dump();
         ram.dump();

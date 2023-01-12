@@ -4,7 +4,7 @@
 `include "utils.svh"
 
 /** Register file with 2 read ports and 1 write port. */
-module register_file (
+module register_file #(parameter USE_FORWARDING=0) (
         input clk, reset, write_enable,
         input RegAddress addr_write, addr1, addr2, input Word in,
         output Word out1, out2);
@@ -17,9 +17,9 @@ module register_file (
     `TRACE(registers[addr_write], 39, ("🧾%s <= %0d", Reg_name(addr_write), in))
     /* verilator lint_on SYNCASYNCNET */
 
-    // read ports
-    assign out1 = addr1 == 0 ? 0 : registers[addr1];
-    assign out2 = addr2 == 0 ? 0 : registers[addr2];
+    // read ports, with forwarding
+    assign out1 = addr1 == 0 ? 0 : (USE_FORWARDING && write_enable && addr_write == addr1) ? in : registers[addr1];
+    assign out2 = addr2 == 0 ? 0 : (USE_FORWARDING && write_enable && addr_write == addr2) ? in : registers[addr2];
 
     always @ (posedge clk) begin
         if (reset) clear();

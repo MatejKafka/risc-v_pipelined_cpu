@@ -154,7 +154,7 @@ module instruction_decoder(output reg error, input UWord in, output Instruction 
         if (zeros != 0) `SIGILL(("Invalid/unsupported E instruction."));
         case (type_)
             12'b000000000000: `SIGILL(("ECALL is not supported."));
-            12'b000000000001: return parsed(ADD, 0, RD_NONE, ALU1_RS1, ALU2_IMM, .is_ebreak(TRUE));
+            12'b000000000001: return parsed(ADD, 0, RD_NONE, ALU1_ZERO, ALU2_IMM, .is_ebreak(TRUE));
             default: `SIGILL(("Invalid/unsupported E instruction."));
         endcase
     endfunction

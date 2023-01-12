@@ -1,0 +1,131 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Thu Jan 12 23:08:03 2023
+[*]
+[dumpfile] "../build/cpu_pipelined.vcd"
+[dumpfile_mtime] "Thu Jan 12 22:53:01 2023"
+[dumpfile_size] 36913
+[savefile] "./cpu_pipelined.gtkw"
+[timestart] 0
+[size] 1920 1051
+[pos] -1 -1
+*-13.920349 276810 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] cpu_pipelined_tb.
+[treeopen] cpu_pipelined_tb.cpu.
+[treeopen] cpu_pipelined_tb.cpu.stage_ex.
+[treeopen] cpu_pipelined_tb.cpu.stage_id.
+[treeopen] cpu_pipelined_tb.cpu.stage_if.
+[sst_width] 239
+[signals_width] 210
+[sst_expanded] 1
+[sst_vpaned_height] 314
+@29
+cpu_pipelined_tb.cpu.stop
+@c00028
+[color] 4
+cpu_pipelined_tb.cpu.error[1:0]
+@28
+[color] 4
+(0)cpu_pipelined_tb.cpu.error[1:0]
+[color] 4
+(1)cpu_pipelined_tb.cpu.error[1:0]
+@1401200
+-group_end
+@24
+[color] 4
+cpu_pipelined_tb.reset
+[color] 4
+cpu_pipelined_tb.clk
+@200
+-
+@28
+cpu_pipelined_tb.cpu.stage_if.program_counter.should_branch
+@200
+-
+@22
+[color] 2
+cpu_pipelined_tb.cpu.rom_address[15:0]
+@2028
+[color] 2
+^1 ./Instruction.gtkw-filter
+cpu_pipelined_tb.cpu.rom_data[31:0]
+@200
+-
+@2028
+[color] 7
+^2 ./AluOp.gtkw-filter
+cpu_pipelined_tb.cpu.stage_ex.alu.operation[3:0]
+@420
+[color] 7
+cpu_pipelined_tb.cpu.stage_ex.alu.a[31:0]
+[color] 7
+cpu_pipelined_tb.cpu.stage_ex.alu.b[31:0]
+[color] 7
+cpu_pipelined_tb.cpu.stage_ex.alu.out[31:0]
+@200
+-
+@c02024
+[color] 1
+^3 ./Reg.gtkw-filter
+cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+@28
+[color] 1
+(0)cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+[color] 1
+(1)cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+[color] 1
+(2)cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+[color] 1
+(3)cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+[color] 1
+(4)cpu_pipelined_tb.cpu.stage_id.register_file.addr_write[4:0]
+@1401200
+-group_end
+@c00420
+[color] 1
+cpu_pipelined_tb.cpu.stage_id.register_file.in[31:0]
+@28
+[color] 1
+cpu_pipelined_tb.cpu.stage_id.register_file.in[31:0]
+@1401200
+-group_end
+@2024
+[color] 1
+^3 ./Reg.gtkw-filter
+cpu_pipelined_tb.cpu.stage_id.register_file.addr1[4:0]
+@420
+[color] 1
+cpu_pipelined_tb.cpu.stage_id.register_file.out1[31:0]
+@2024
+[color] 1
+^3 ./Reg.gtkw-filter
+cpu_pipelined_tb.cpu.stage_id.register_file.addr2[4:0]
+@420
+[color] 1
+cpu_pipelined_tb.cpu.stage_id.register_file.out2[31:0]
+@200
+-
+@28
+[color] 3
+cpu_pipelined_tb.ram.write_enable
+@22
+[color] 3
+cpu_pipelined_tb.ram.address[7:0]
+@420
+[color] 3
+cpu_pipelined_tb.ram.in[31:0]
+[color] 3
+cpu_pipelined_tb.ram.out[31:0]
+@200
+-
+@420
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[1][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[2][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[3][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[4][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[5][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[6][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[7][31:0]
+cpu_pipelined_tb.cpu.stage_id.register_file.registers[8][31:0]
+[pattern_trace] 1
+[pattern_trace] 0
