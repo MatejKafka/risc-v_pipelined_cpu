@@ -47,6 +47,10 @@ typedef struct packed {
     RegAddress rs2;
 } Instruction;
 
+// raw encoded NOP instruction
+const UWord R_NOP = {12'(0), 5'(0), 3'b000, 5'(0), 7'b0010011};
+// InstructionControl which disables all visible effects of an instruction
+const InstructionControl NOP_CONTROL = '{ADD, C_NONE, 0, 0, BC_NEVER, RD_NONE, ALU1_ZERO, ALU2_IMM};
 // NOP = ADDI 0, 0, 0
 const Instruction I_NOP = '{'{ADD, C_NONE, 0, 0, BC_NEVER, RD_ALU, ALU1_RS1, ALU2_IMM}, 0, 0, 0, 0};
 

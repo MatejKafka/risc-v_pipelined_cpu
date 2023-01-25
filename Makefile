@@ -1,14 +1,17 @@
-.PHONY: all dump run test decode trace clean FORCE_REBUILD
+.PHONY: all dump run-scalar run-pipelined test decode trace clean FORCE_REBUILD
 
 PROGRAM_MEMH = test_programs/build/gcd.memh
 
-all: run
+all: run-scalar
 
 dump:
 	@$(MAKE) dump --directory test_programs --no-print-directory
 
-run: $(PROGRAM_MEMH)
+run-scalar: $(PROGRAM_MEMH)
 	./run.sh main $<
+
+run-pipelined: $(PROGRAM_MEMH)
+	./run.sh main_pipelined $<
 
 test: $(PROGRAM_MEMH)
 	./run_all.sh $<

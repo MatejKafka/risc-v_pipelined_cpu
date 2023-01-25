@@ -8,11 +8,6 @@
 `include "register_file.sv"
 `include "instruction_decoder.sv"
 
-typedef struct packed {
-    logic decoder;
-    logic alu;
-} CpuError;
-
 /**
  * The main CPU module, connecting together all submodules.
  *
@@ -47,7 +42,7 @@ module cpu(
 
     logic should_branch;
     RomAddress pc, next_pc;
-    program_counter program_counter(clk, reset, should_branch, RomAddress'(alu_out), pc, next_pc);
+    program_counter program_counter(clk, reset, 0, should_branch, RomAddress'(alu_out), pc, next_pc);
 
 
     assign rom_address = pc;
@@ -91,11 +86,15 @@ module cpu(
 
     assign stop = control.is_ebreak;
     assign error = '{decoder_error, alu_error};
+
+    task dump_registers();
+        register_file.dump();
+    endtask
 endmodule
 
 
 `ifdef TEST_cpu
-`include "instruction_macros.svh"
+`include "cpu_test_program.svh"
 module cpu_tb;
     reg clk, reset;
     logic error_enabled;
@@ -115,38 +114,8 @@ module cpu_tb;
         rom_data, rom_address,
         ram_data, ram_address, ram_write_enable, ram_write_data);
 
-
     // for unit testing, we want to avoid using ROM, so we'll use a hardcoded list of instructions
-    UWord rom_simulated[25] = '{
-        `R_ADDI(1, 0, 10),
-        `R_ADDI(1, 1, 50),
-        `R_ADDI(2, 1, 5),
-        `R_AUIPC(11, 32'h7FFFF000), // r11 should contain 2147479564 (0x7FFFF00C)
-        `R_ADDI(2, 2, -1),
-        `R_BLT (1, 2, -13'd4),
-        `R_BEQ (2, 1, 13'd8),
-        `R_NOP, // this should be skipped
-        `R_ADDI(3, 2, 1),
-        `R_ADDI(4, 3, 0),
-        `R_ADDI(4, 4, 1),
-        `R_SUB (5, 4, 1),
-        `R_JAL (8, 21'h8),
-        `R_JAL (0, 21'h10), // this should be skipped the first time
-        `R_AUIPC(12, 32'h0), // store PC to r12
-        `R_JALR(11, 12, -12'd4), // jump to r12 - 4
-        `R_NOP, // this should be skipped
-        `R_AND (6, 1, 2),
-        `R_ADDI(7, 2, -5),
-        `R_SW  (1, 1, -12'h20),
-        `R_LW  (9, 0, 12'h1c),
-        // try to store -2 (0xFFFFFFFE) into r10
-        `R_LUI (10, 32'hFFFFF000),
-        `R_XORI(10, 0, 'hFFE),
-        `R_SW  (10, 0, 0),
-        `R_EBREAK
-    };
-
-    assign rom_data = rom_simulated[rom_address[6:2]];
+    assign rom_data = cpu_test_program[rom_address[6:2]];
 
 
     initial begin
@@ -174,7 +143,7 @@ module cpu_tb;
 
     always @ (posedge masked_stop) begin
         #10; // delay to let the last register write finish
-        cpu.register_file.dump();
+        cpu.dump_registers();
         ram.dump();
         $finish();
     end

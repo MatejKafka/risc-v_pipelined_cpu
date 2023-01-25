@@ -3,6 +3,11 @@
 `include "types.svh"
 `include "utils.svh"
 
+/**
+ * A comparator module, used for branch instructions. Typically, branch results are computed
+ * on the ALU, but using a separate comparator module frees up the ALU for branch target calculation,
+ * avoiding the need for another adder and more control signals just for the program counter.
+ */
 module alu_comparator(input ComparatorOp operation, input Word a, input Word b, output logic out);
     /* verilator lint_off SYNCASYNCNET */
     `TRACE(out, 36, ("🔢c %0s = %0d %0s %0d", out ? "TRUE" : "FALSE", a, ComparatorOp_name(operation), b))

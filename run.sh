@@ -28,7 +28,7 @@ if [[ "${#args[@]}" == 2 ]]; then
 fi
 
 
-root_dir="$(realpath $(dirname $BASH_SOURCE))"
+root_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 tb_enabler="TEST_$(basename "$tested_module")"
 target="$root_dir/build/$(dirname "$tested_module")/V$(basename "$tested_module")"
 target_output="$root_dir/build/$tested_module.vcd"

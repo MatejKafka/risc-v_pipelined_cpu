@@ -4,19 +4,19 @@
 `include "instruction_types.svh"
 
 module program_counter(
-        input clk, reset,
+        input clk, reset, stall,
         input logic should_branch, input RomAddress branch_target,
         output RomAddress current_pc, output RomAddress next_pc);
-    // we calculate PC + 4 here, instead of reusing the adder in the ternary below, because
-    //  for JAL, we need to access next_pc outside, and if we did not compute it here, we'd
-    //  have to route it through ALU
-    // also, in a real CPU, we'd probably want to compute this ASAP, so that when we
-    //  figure out if we should take the branch (e.g. for BEQ), we have both values ready
+
+    // we calculate PC + 4 here, because for JAL/JALR, we need to access next_pc outside,
+    //  and if we did not compute it here, we'd have to route it through ALU
     assign next_pc = current_pc + RomAddress'(`BYTES(UWord)); // +4 for 32bit UWord
 
     always @ (posedge clk) begin
-        if (reset) current_pc <= 0;
-        else current_pc <= should_branch ? branch_target : next_pc;
+        current_pc <= reset ? 0
+            // even if stalling, follow the branch
+            : should_branch ? branch_target
+            : stall ? current_pc : next_pc;
     end
 endmodule
 
@@ -27,7 +27,7 @@ module program_counter_tb;
     RomAddress branch_target;
     RomAddress current_pc, unused_next_pc;
 
-    program_counter pc(clk, reset, should_branch, branch_target, current_pc, unused_next_pc);
+    program_counter pc(clk, reset, 0, should_branch, branch_target, current_pc, unused_next_pc);
 
     initial begin
         $dumpfile("program_counter.vcd");
