@@ -10,6 +10,6 @@ for i in (seq 0 99)
     set A (math $add + $base '*' $base2 '*' (random 1 20))
     set B (math $add + $base '*' $base2 '*' (random 1 1000))
     make clean --directory .. --quiet 2>/dev/null
-    make run --directory ../.. --quiet EXTRA_CFLAGS="-DGCD_A=$A -DGCD_B=$B" 2>/dev/null \
+    make run-pipelined --directory ../.. --quiet EXTRA_CFLAGS="-DGCD_A=$A -DGCD_B=$B" 2>/dev/null \
         | sed -nE 's/^\s*0x0. = (\d*)\s*/\1/p' | tr "\n" "," | xargs echo
 end | ./validate.py

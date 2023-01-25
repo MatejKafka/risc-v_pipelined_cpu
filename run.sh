@@ -38,9 +38,10 @@ src="$root_dir/src/$tested_module.sv"
 mkdir -p "$target_dir"
 
 # run slang (from Windows) in --lint-only mode to get better error messages
-slang.exe --lint-only --quiet \
-    -Wextra -Wpedantic -Wconversion \
-    -D"$tb_enabler" "${compiler_args[@]}" -I"$(wslpath -w "$root_dir/src")" "$(wslpath -w "$src")"
+# commented out to allow running on non-WSL Linux
+#slang.exe --lint-only --quiet \
+#    -Wextra -Wpedantic -Wconversion \
+#    -D"$tb_enabler" "${compiler_args[@]}" -I"$(wslpath -w "$root_dir/src")" "$(wslpath -w "$src")"
 
 # compile to an executable
 verilator \
