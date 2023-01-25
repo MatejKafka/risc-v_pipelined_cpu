@@ -4,10 +4,6 @@
 `include "utils.svh"
 
 module alu(output logic error, input AluOp operation, input Word a, input Word b, output Word out);
-    /* verilator lint_off SYNCASYNCNET */
-    `TRACE(out, 36, ("🔢%0d = %0d %0s %0d", out, a, AluOp_symbol(operation), b))
-    /* verilator lint_on SYNCASYNCNET */
-
     always @ (*) begin
         error = 0;
         case (operation)

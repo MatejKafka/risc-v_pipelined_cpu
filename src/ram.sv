@@ -7,10 +7,6 @@ module ram(input clk, reset, write_enable, input RamAddress address, input Word 
     // addresses are in bytes, but our slots are Word-sized
     Word memory[0:(1 << ($bits(address) - `WORD_ADDRESS_SIZE)) - 1];
 
-    /* verilator lint_off SYNCASYNCNET */
-    `TRACE(write_enable or address or in or out, 33, ("📁d we=%0d address=0x%h in=%0d out=%0d", write_enable, address, in, out))
-    /* verilator lint_on SYNCASYNCNET */
-
     // read port
     assign out = memory[`WORD_ADDRESS(address)];
 

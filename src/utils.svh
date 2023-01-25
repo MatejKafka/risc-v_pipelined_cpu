@@ -23,13 +23,10 @@ logic SUPRESS_TRACE = 0;
 logic DEBUG_MODE = logic'($test$plusargs("DEBUG"));
 
 `ifndef NO_TRACING
-// log all changes to the signals in `what`; for some reason, Verilator is weird
-//  about $monitor and only shows it in debug mode, but that does not work together
-//  with initial value randomization (not sure why), so we don't use it here
-`define TRACE(WHAT, COLOR_N, DISPLAY_EXPR) \
-    always @ (WHAT) if (DEBUG_MODE && !SUPRESS_TRACE) `LOG_COLOR(COLOR_N, DISPLAY_EXPR);
+`define TRACE(COLOR_N, DISPLAY_EXPR) \
+    if (DEBUG_MODE && !SUPRESS_TRACE) `LOG_COLOR(COLOR_N, DISPLAY_EXPR)
 `else
-    `define TRACE(what, color_n, display_expr)
+    `define TRACE(what, color_n, display_expr) do begin end while (0)
 `endif
 
 // assumes that `error` is an output signal

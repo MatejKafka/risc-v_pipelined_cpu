@@ -9,10 +9,6 @@
  * avoiding the need for another adder and more control signals just for the program counter.
  */
 module alu_comparator(input ComparatorOp operation, input Word a, input Word b, output logic out);
-    /* verilator lint_off SYNCASYNCNET */
-    `TRACE(out, 36, ("🔢c %0s = %0d %0s %0d", out ? "TRUE" : "FALSE", a, ComparatorOp_name(operation), b))
-    /* verilator lint_on SYNCASYNCNET */
-
     always @ (*) case (operation)
         C_EQ:  out = a == b;
         C_LT:  out = $signed(a) < $signed(b);

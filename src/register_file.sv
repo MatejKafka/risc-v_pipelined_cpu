@@ -11,12 +11,6 @@ module register_file #(parameter USE_FORWARDING=0) (
 
     Word registers[1:(1<<$bits(RegAddress))-1]; // start from 1, register 0 is hardwired to 0
 
-    /* verilator lint_off SYNCASYNCNET */
-    `TRACE(addr1 or out1, 39, ("🧾%s => %0d", Reg_name(addr1), out1))
-    `TRACE(addr2 or out2, 39, ("🧾%s => %0d", Reg_name(addr2), out2))
-    `TRACE(registers[addr_write], 39, ("🧾%s <= %0d", Reg_name(addr_write), in))
-    /* verilator lint_on SYNCASYNCNET */
-
     // read ports, with forwarding
     assign out1 = addr1 == 0 ? 0 : (USE_FORWARDING && write_enable && addr_write == addr1) ? in : registers[addr1];
     assign out2 = addr2 == 0 ? 0 : (USE_FORWARDING && write_enable && addr_write == addr2) ? in : registers[addr2];
@@ -26,6 +20,7 @@ module register_file #(parameter USE_FORWARDING=0) (
         else if (write_enable && addr_write != 0) begin
             // write port
             registers[addr_write] <= in;
+            `TRACE(39, ("🧾%s <= %0d", Reg_name(addr_write), in));
         end
     end
 
