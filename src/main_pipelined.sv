@@ -1,10 +1,12 @@
 `ifndef PACKAGE_MAIN_PIPELINED
 `define PACKAGE_MAIN_PIPELINED
 
+// reuse the same `computer` module, just switch the CPU implementation
 `define USE_PIPELINE
 `include "main.sv"
 
 `ifdef TEST_main_pipelined
+// very similar to main.sv, 3 lines are different
 module main_pipelined_tb;
     logic reset, error_enabled;
     logic clk, cpu_clk, cpu_stop, error;
