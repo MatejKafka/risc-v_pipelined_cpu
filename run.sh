@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-visualize=0
+
+HELP="Usage: $0 [-dnh] <MODULE_NAME> [<ROM_PATH>]
+Run the testbench for the selected module.
+
+MODULE_NAME: name of a .sv file in the src directory, without the extension (e.g. 'cpu_pipelined')
+ROM_PATH: path to a .memh file containing the ROM (compiled executable) that is loaded into ROM;
+          the path is only used for modules which utilize the ROM ('main', 'main_pipelined')
+
+  -d  enable debug trace prints during simulation
+  -n  compile the code without tracing support (use -d to enable tracing at runtime)
+  -h  display this help and exit
+
+Example: $0 main test_programs/build/gcd.memh"
+
+
 compiler_args=()
 simulator_args=()
 args=()
@@ -11,8 +25,8 @@ while [ $OPTIND -le "$#" ]; do
         case $option in
             d) simulator_args+=("+DEBUG") ;;
             n) compiler_args+=("-DNO_TRACING") ;;
-            v) visualize=1 ;;
-            ?) exit 1;;
+            h) echo "$HELP"; exit ;;
+            ?) echo >&2 "$HELP"; exit 1 ;;
         esac
     else
         args+=("${!OPTIND}")
@@ -20,10 +34,14 @@ while [ $OPTIND -le "$#" ]; do
     fi
 done
 
-if [[ "${#args[@]}" == 0 ]]; then echo >&2 "Missing test module name"; exit 2; fi
-tested_module="${args[0]}"
+if [[ "${#args[@]}" == 0 ]]; then
+    echo >&2 "$0: missing test module name"
+    echo >&2 "Try '$0 -h' for more information."
+    exit 2
+fi
 
-if [[ "${#args[@]}" == 2 ]]; then
+tested_module="${args[0]}"
+if [[ "${#args[@]}" -ge 2 ]]; then
     simulator_args+=("+ROM_PATH=$(realpath "${args[1]}")")
 fi
 
@@ -37,16 +55,11 @@ src="$root_dir/src/$tested_module.sv"
 
 mkdir -p "$target_dir"
 
-# run slang (from Windows) in --lint-only mode to get better error messages
-# commented out to allow running on non-WSL Linux
-#slang.exe --lint-only --quiet \
-#    -Wextra -Wpedantic -Wconversion \
-#    -D"$tb_enabler" "${compiler_args[@]}" -I"$(wslpath -w "$root_dir/src")" "$(wslpath -w "$src")"
-
 # compile to an executable
+# to speed up the compilation a bit, I use the following extra arguments:
+#  -CFLAGS "-fuse-ld=mold" -MAKEFLAGS "-s OPT_FAST=-O0 CXX=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++"
 verilator \
     --binary --trace --build-jobs 0 \
-    -CFLAGS "-fuse-ld=mold" -MAKEFLAGS "-s OPT_FAST=-O0 CXX=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++" \
     -Wall -Wpedantic -Wno-EOFNEWLINE -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL \
     --x-assign 1 --x-initial unique \
     --top-module "$(basename "$tested_module")_tb" -D"$tb_enabler" "${compiler_args[@]}" \
@@ -54,10 +67,6 @@ verilator \
     >/dev/null # hide build prints
 
 cd "$target_dir"
-# run the simulation, set a seed for the initial values of uninitialized variables to catch incorrect resets
+# run the simulation, set all registers to '1 initially to catch incorrect resets
 # https://verilator.org/guide/latest/exe_sim.html
 "$target" +verilator+rand+reset+1 "${simulator_args[@]}"
-
-if [[ "$visualize" == "1" ]]; then
-    gtkwave.exe "$(wslpath -w "$target_output")" 1>/dev/null 2>/dev/null
-fi
