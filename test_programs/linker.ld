@@ -5,4 +5,7 @@ SECTIONS {
         *(.text)
         *(.text.*)
     }
+    .note.gnu.build-id (NOLOAD) : {
+        *(.note.gnu.build-id)
+    }
 }
