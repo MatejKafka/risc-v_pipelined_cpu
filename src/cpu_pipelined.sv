@@ -28,7 +28,7 @@
  * ERROR SIGNALLING
  * Decoder and ALU error signals are sent through the pipeline and emitted from MEM. When the pipeline is flushed,
  * error signals are zeroed together with the other control signals. This allows the initial stages of the pipeline
- * to contain invalid instructions (e.g. after a branch) without singalling an error, as long as they're flushed
+ * to contain invalid instructions (e.g. after a branch) without signalling an error, as long as they're flushed
  * before any effects become visible.
  *
  * BRANCHES / EBREAK
